@@ -2,7 +2,7 @@
 
 Tienda online desarrollada para Ferretería Los Maestros.
 
-Proyecto del ramo Desarrollo FullStack II (DSY1104) de Duoc UC. En la Evaluación Parcial 2 el sitio fue migrado a React y se incorporaron componentes reutilizables, navegación, persistencia local, administración y pruebas unitarias.
+Proyecto del ramo Desarrollo FullStack II (DSY1104) de Duoc UC. En la Evaluación Parcial 2 el sitio fue migrado a React y se incorporaron componentes reutilizables, navegación, persistencia local, administración y pruebas unitarias. En la Evaluación Parcial 3 se conectó con los microservicios Spring Boot del backend: inicio de sesión con JWT, administración de usuarios y pedidos.
 
 ## Equipo
 
@@ -18,7 +18,8 @@ Proyecto del ramo Desarrollo FullStack II (DSY1104) de Duoc UC. En la Evaluació
 - React con Vite
 - React Bootstrap y Bootstrap
 - React Router
-- localStorage
+- localStorage y sessionStorage
+- Backend: https://github.com/GiuliannoInostroza/ferreteria-los-maestros-backend
 - Vitest
 - React Testing Library
 - jsdom
@@ -39,6 +40,16 @@ La aplicación se abrirá normalmente en:
 ```text
 http://localhost:5173
 ```
+
+El frontend se conecta con estos microservicios (deben estar levantados, ver el README del backend). Las direcciones están en `.env.development`, y `.env.example` documenta los nombres:
+
+| Variable | Valor local | Microservicio |
+| -------- | ----------- | ------------- |
+| `VITE_AUTH_API_URL` | `http://localhost:8090/api` | ms-usuarios (login y registro) |
+| `VITE_USUARIOS_API_URL` | `http://localhost:8090/api` | ms-usuarios (administración) |
+| `VITE_PEDIDOS_API_URL` | `http://localhost:8092/api` | ms-pedidos |
+
+Después de cambiar un `.env` hay que reiniciar `npm run dev`.
 
 Para generar la versión de producción:
 
@@ -62,36 +73,31 @@ npm run coverage
 
 Resultado final:
 
-- 21 de 21 archivos de prueba aprobados.
-- 30 de 30 pruebas aprobadas.
-- 10 pruebas por integrante.
+- 26 de 26 archivos de prueba aprobados.
+- 39 de 39 pruebas aprobadas.
 
 Cobertura final:
 
 | Indicador  | Cobertura |
 | ---------- | --------: |
-| Statements |   86,68 % |
-| Branches   |   82,26 % |
-| Functions  |   89,84 % |
-| Lines      |   86,14 % |
+| Statements |   84,76 % |
+| Branches   |   72,81 % |
+| Functions  |   89,93 % |
+| Lines      |   86,63 % |
 
-Las pruebas utilizan `vi.fn`, `vi.spyOn`, `mockRestore` y `mockResolvedValue` según el caso.
+Las pruebas utilizan `vi.fn`, `vi.spyOn`, `mockRestore` y `mockResolvedValue` según el caso. Las que llaman a la API reemplazan `fetch` con `vi.spyOn(globalThis, "fetch")`, así no necesitan el backend levantado.
 
-## Usuarios de prueba
+## Sesión y roles
 
-El inicio de sesión es simulado y no almacena contraseñas. Para la demostración puede utilizarse la contraseña `1234`.
+El inicio de sesión se hace contra `ms-usuarios`, que valida la contraseña (guardada con BCrypt) y entrega un JWT. React guarda el token y el usuario en `sessionStorage`: la sesión se mantiene al recargar y se borra al cerrar la pestaña o con "Cerrar sesión". Cada servicio envía el token en el encabezado `Authorization: Bearer`. El token dura 1 hora; al vencer, hay que volver a iniciar sesión.
 
-| Usuario             | Correo                  | Rol           |
-| ------------------- | ----------------------- | ------------- |
-| Agustín Pérez       | agu.perez@duocuc.cl     | Administrador |
-| Giulianno Inostroza | giu.inostroza@duocuc.cl | Vendedor      |
-| Nicolás Pérez       | na.perezg@duocuc.cl     | Cliente       |
+La cuenta de administrador inicial la crea `ms-usuarios` al arrancar con `ADMIN_CORREO` y `ADMIN_PASSWORD`. Las cuentas nuevas se crean en `/registro` (como Cliente) o desde la administración de usuarios.
 
 ### Permisos
 
-- Cliente: navegación y compra.
-- Vendedor: navegación, compra y administración de productos.
-- Administrador: navegación, compra, administración de productos y administración de usuarios.
+- Cliente: navegación, compra y sus propios pedidos.
+- Vendedor: lo anterior, administración de productos y gestión de todos los pedidos.
+- Administrador: lo anterior y administración de usuarios (crear, editar, asignar rol y desactivar).
 
 ## Funcionalidades principales
 
@@ -102,7 +108,9 @@ El inicio de sesión es simulado y no almacena contraseñas. Para la demostraci�
 - Productos destacados.
 - Carrito de compras.
 - Modificación y eliminación de productos del carrito.
-- Checkout simulado.
+- Checkout que registra el pedido en el backend.
+- Mis pedidos con su estado.
+- Gestión de pedidos para Vendedor y Administrador.
 - Validación de formularios.
 - Control y actualización de stock.
 - Registro de clientes.
@@ -110,7 +118,7 @@ El inicio de sesión es simulado y no almacena contraseñas. Para la demostraci�
 - Roles Cliente, Vendedor y Administrador.
 - Administración de productos.
 - Administración de usuarios.
-- Persistencia mediante `localStorage`.
+- Persistencia del carrito mediante `localStorage` y de la sesión mediante `sessionStorage`.
 - Diseño responsive.
 
 ## Estructura principal
@@ -146,6 +154,8 @@ src/
 | `/contacto`          | Contacto                    |
 | `/admin/productos`   | Administración de productos |
 | `/admin/usuarios`    | Administración de usuarios  |
+| `/mis-pedidos`       | Mis pedidos                 |
+| `/admin/pedidos`     | Gestión de pedidos          |
 
 ## Diseño responsive
 
@@ -161,8 +171,6 @@ http://54.88.103.128
 
 ## Alcance
 
-Esta evaluación corresponde al frontend de la aplicación.
+Los usuarios y los pedidos se guardan en el backend (MySQL). El catálogo, las ofertas, los blogs y el stock siguen en datos locales hasta que se conecten `ms-catalogo` y `ms-contenido`.
 
-Los datos se almacenan localmente en el navegador mediante `localStorage`.
-
-No se incluye backend, base de datos, pagos reales ni autenticación segura con JWT.
+No se incluyen pagos reales.
