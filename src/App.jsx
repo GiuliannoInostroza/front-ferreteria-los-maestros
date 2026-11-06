@@ -74,50 +74,6 @@ function App() {
 
       <div className="flex-grow-1">
         <Routes>
-          <Route path="/" element={<Inicio />} />
-          <Route
-            path="/productos"
-            element={<Productos onAgregar={agregarAlCarrito} />}
-          />
-          <Route
-            path="/productos/:codigo"
-            element={<DetalleProducto onAgregar={agregarAlCarrito} />}
-          />
-          <Route
-            path="/carrito"
-            element={
-              <Carrito
-                carrito={carrito}
-                onCambiarCantidad={cambiarCantidad}
-                onQuitar={quitarDelCarrito}
-              />
-            }
-          />
-          <Route element={<RutaProtegida />}>
-            <Route
-              path="/checkout"
-              element={
-                <Checkout
-                  carrito={carrito}
-                  usuario={usuario}
-                  onVaciar={vaciarCarrito}
-                />
-              }
-            />
-            <Route path="/mis-pedidos" element={<MisPedidos />} />
-          </Route>
-          <Route
-            path="/categorias"
-            element={<Categorias onAgregar={agregarAlCarrito} />}
-          />
-          <Route
-            path="/ofertas"
-            element={<Ofertas onAgregar={agregarAlCarrito} />}
-          />
-          <Route path="/nosotros" element={<Nosotros />} />
-          <Route path="/blogs" element={<Blogs />} />
-          <Route path="/blogs/:id" element={<BlogDetalle />} />
-          <Route path="/contacto" element={<Contacto />} />
           <Route
             path="/login"
             element={
@@ -129,24 +85,68 @@ function App() {
             }
           />
           <Route path="/registro" element={<Registro />} />
-          <Route
-            path="/admin/productos"
-            element={
-              puedeAdministrar(usuario) ? <AdminProductos /> : <SinAcceso />
-            }
-          />
-          <Route
-            path="/admin/pedidos"
-            element={
-              puedeAdministrar(usuario) ? <GestionPedidos /> : <SinAcceso />
-            }
-          />
-          <Route element={<RutaProtegida rol="Administrador" />}>
-            <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-            <Route path="/admin/usuarios/nuevo" element={<UsuarioForm />} />
-            <Route path="/admin/usuarios/:id/editar" element={<UsuarioForm />} />
+          <Route element={<RutaProtegida />}>
+            <Route path="/" element={<Inicio />} />
+            <Route
+              path="/productos"
+              element={<Productos onAgregar={agregarAlCarrito} />}
+            />
+            <Route
+              path="/productos/:codigo"
+              element={<DetalleProducto onAgregar={agregarAlCarrito} />}
+            />
+            <Route
+              path="/carrito"
+              element={
+                <Carrito
+                  carrito={carrito}
+                  onCambiarCantidad={cambiarCantidad}
+                  onQuitar={quitarDelCarrito}
+                />
+              }
+            />
+            <Route
+              path="/checkout"
+              element={
+                <Checkout
+                  carrito={carrito}
+                  usuario={usuario}
+                  onVaciar={vaciarCarrito}
+                />
+              }
+            />
+            <Route path="/mis-pedidos" element={<MisPedidos />} />
+            <Route
+              path="/categorias"
+              element={<Categorias onAgregar={agregarAlCarrito} />}
+            />
+            <Route
+              path="/ofertas"
+              element={<Ofertas onAgregar={agregarAlCarrito} />}
+            />
+            <Route path="/nosotros" element={<Nosotros />} />
+            <Route path="/blogs" element={<Blogs />} />
+            <Route path="/blogs/:id" element={<BlogDetalle />} />
+            <Route path="/contacto" element={<Contacto />} />
+            <Route
+              path="/admin/productos"
+              element={
+                puedeAdministrar(usuario) ? <AdminProductos /> : <SinAcceso />
+              }
+            />
+            <Route
+              path="/admin/pedidos"
+              element={
+                puedeAdministrar(usuario) ? <GestionPedidos /> : <SinAcceso />
+              }
+            />
+            <Route element={<RutaProtegida rol="Administrador" />}>
+              <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+              <Route path="/admin/usuarios/nuevo" element={<UsuarioForm />} />
+              <Route path="/admin/usuarios/:id/editar" element={<UsuarioForm />} />
+            </Route>
+            <Route path="*" element={<NoEncontrada />} />
           </Route>
-          <Route path="*" element={<NoEncontrada />} />
         </Routes>
       </div>
 

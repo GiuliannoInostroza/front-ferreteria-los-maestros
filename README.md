@@ -89,6 +89,8 @@ Las pruebas utilizan `vi.fn`, `vi.spyOn`, `mockRestore` y `mockResolvedValue` se
 
 ## Sesión y roles
 
+Como pide la Forma E, todas las pantallas exigen sesión, salvo `/login` y `/registro`: sin sesión, `RutaProtegida` redirige al inicio de sesión.
+
 El inicio de sesión se hace contra `ms-usuarios`, que valida la contraseña (guardada con BCrypt) y entrega un JWT. React guarda el token y el usuario en `sessionStorage`: la sesión se mantiene al recargar y se borra al cerrar la pestaña o con "Cerrar sesión". Cada servicio envía el token en el encabezado `Authorization: Bearer`. El token dura 1 hora; al vencer, hay que volver a iniciar sesión.
 
 La cuenta de administrador inicial la crea `ms-usuarios` al arrancar con `ADMIN_CORREO` y `ADMIN_PASSWORD`. Las cuentas nuevas se crean en `/registro` (como Cliente) o desde la administración de usuarios.
