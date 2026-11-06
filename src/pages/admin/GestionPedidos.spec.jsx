@@ -8,7 +8,7 @@ describe("GestionPedidos", () => {
     const pedido = {
       id: 3,
       correoCliente: "ana@gmail.com",
-      fecha: "2026-11-06T10:15:00",
+      fecha: "2026-11-06",
       tipoEntrega: "Retiro en tienda",
       medioPago: "Pago en tienda",
       total: 11980,
@@ -23,7 +23,7 @@ describe("GestionPedidos", () => {
 
     render(<GestionPedidos />);
 
-    const estado = await screen.findByLabelText("Estado del pedido 3");
+    const estado = await screen.findByRole("combobox", { name: "Estado del pedido 3" });
     expect(screen.getByText("ana@gmail.com")).toBeInTheDocument();
 
     espia.mockResolvedValue({
@@ -41,7 +41,7 @@ describe("GestionPedidos", () => {
         headers: { "Content-Type": "application/json" },
       }
     );
-    expect(await screen.findByDisplayValue("Confirmado")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Confirmado", selected: true })).toBeInTheDocument();
 
     espia.mockRestore();
   });

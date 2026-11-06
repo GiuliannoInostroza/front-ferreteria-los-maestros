@@ -69,7 +69,7 @@ describe("Registro", () => {
     await usuario.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
     expect(
-      await screen.findByText("Ya existe una cuenta con ese correo"),
+      screen.getByText("Ya existe una cuenta con ese correo"),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Cuenta creada" }),

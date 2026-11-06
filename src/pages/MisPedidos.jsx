@@ -46,7 +46,7 @@ function MisPedidos() {
             {pedidos.map(pedido => (
               <tr key={pedido.id}>
                 <td>{pedido.id}</td>
-                <td>{pedido.fecha.slice(0, 10)}</td>
+                <td>{pedido.fecha}</td>
                 <td>{pedido.tipoEntrega}</td>
                 <td>{pedido.medioPago}</td>
                 <td>{formatearPrecio(pedido.total)}</td>

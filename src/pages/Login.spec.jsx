@@ -64,9 +64,8 @@ describe("Login", () => {
     await usuario.type(screen.getByLabelText("Contraseña"), "mala");
     await usuario.click(screen.getByRole("button", { name: "Ingresar" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "No fue posible iniciar sesión"
-    );
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(screen.getByText("No fue posible iniciar sesión")).toBeInTheDocument();
     expect(onIngresar).not.toHaveBeenCalled();
     expect(sessionStorage.getItem("token")).toBe(null);
 

@@ -66,7 +66,7 @@ function GestionPedidos() {
               <tr key={pedido.id}>
                 <td>{pedido.id}</td>
                 <td>{pedido.correoCliente}</td>
-                <td>{pedido.fecha.slice(0, 10)}</td>
+                <td>{pedido.fecha}</td>
                 <td>{pedido.tipoEntrega}</td>
                 <td>{formatearPrecio(pedido.total)}</td>
                 <td>

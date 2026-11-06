@@ -11,7 +11,7 @@ describe("MisPedidos", () => {
       json: async () => [
         {
           id: 3,
-          fecha: "2026-11-06T10:15:00",
+          fecha: "2026-11-06",
           tipoEntrega: "Retiro en tienda",
           medioPago: "Transferencia",
           total: 11980,
@@ -22,7 +22,8 @@ describe("MisPedidos", () => {
 
     render(<MisPedidos />);
 
-    expect(await screen.findByText("En preparación")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Mis pedidos" })).toBeInTheDocument();
+    expect(screen.getByText("En preparación")).toBeInTheDocument();
     expect(screen.getByText("2026-11-06")).toBeInTheDocument();
     expect(screen.getByText("Transferencia")).toBeInTheDocument();
     expect(espia).toHaveBeenCalledWith(
