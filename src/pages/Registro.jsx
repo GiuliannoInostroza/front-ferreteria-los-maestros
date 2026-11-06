@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Button, Container, Form } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
-import { guardarUsuarios, leerUsuarios } from "../utils/persistencia";
-import { siguienteId } from "../utils/usuarios";
+import { registrar } from "../services/authService";
 import { hayErrores, validarRegistro } from "../utils/validaciones";
 
 const inicial = { nombre: "", correo: "", contrasena: "" };
@@ -18,26 +17,24 @@ function Registro() {
     setDatos({ ...datos, [name]: value });
   }
 
-  function enviar(evento) {
+  async function enviar(evento) {
     evento.preventDefault();
-    const correo = datos.correo.trim().toLowerCase();
-    const registrados = leerUsuarios();
-    const nuevosErrores = validarRegistro(datos, registrados);
+    const nuevosErrores = validarRegistro(datos, []);
 
     setErrores(nuevosErrores);
     if (hayErrores(nuevosErrores)) return;
 
-    const nuevoUsuario = {
-      id: siguienteId(registrados),
-      nombre: datos.nombre.trim(),
-      correo,
-      rol: "Cliente",
-      activo: true,
-    };
-
-    guardarUsuarios([...registrados, nuevoUsuario]);
-    setDatos(inicial);
-    setCreada(true);
+    try {
+      await registrar({
+        nombre: datos.nombre.trim(),
+        correo: datos.correo.trim().toLowerCase(),
+        password: datos.contrasena,
+      });
+      setDatos(inicial);
+      setCreada(true);
+    } catch (e) {
+      setErrores({ correo: e.message });
+    }
   }
 
   if (creada) {

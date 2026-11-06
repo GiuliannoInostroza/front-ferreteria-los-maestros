@@ -4,6 +4,7 @@ import { Route, Routes } from "react-router-dom";
 import Navegacion from "./components/Navegacion";
 import PiePagina from "./components/PiePagina";
 import SinAcceso from "./components/SinAcceso";
+import RutaProtegida from "./components/RutaProtegida";
 
 import Inicio from "./pages/Inicio";
 import Productos from "./pages/Productos";
@@ -20,6 +21,8 @@ import BlogDetalle from "./pages/BlogDetalle";
 import Contacto from "./pages/Contacto";
 import AdminProductos from "./pages/admin/AdminProductos";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
+import GestionPedidos from "./pages/admin/GestionPedidos";
+import MisPedidos from "./pages/MisPedidos";
 import NoEncontrada from "./pages/NoEncontrada";
 
 import {
@@ -28,31 +31,20 @@ import {
   modificarCantidad,
   quitarProducto,
 } from "./utils/carrito";
-import {
-  guardarCarrito,
-  guardarSesion,
-  leerCarrito,
-  leerSesion,
-  leerUsuarios,
-} from "./utils/persistencia";
-import {
-  esAdministrador,
-  puedeAdministrar,
-  usuarioVigente,
-} from "./utils/sesion";
+import { guardarCarrito, leerCarrito } from "./utils/persistencia";
+import { puedeAdministrar } from "./utils/sesion";
 import UsuarioForm from "./pages/admin/UsuarioForm";
 
 function App() {
   const [carrito, setCarrito] = useState(() => leerCarrito());
-  const [usuario, setUsuario] = useState(() => leerSesion());
+  const [usuario, setUsuario] = useState(() => {
+    const texto = sessionStorage.getItem("usuario");
+    return texto ? JSON.parse(texto) : null;
+  });
 
   useEffect(() => {
     guardarCarrito(carrito);
   }, [carrito]);
-
-  useEffect(() => {
-    guardarSesion(usuario);
-  }, [usuario]);
 
   function agregarAlCarrito(producto) {
     setCarrito(agregarProducto(carrito, producto));
@@ -70,11 +62,15 @@ function App() {
     setCarrito([]);
   }
 
-  const sesionActual = usuarioVigente(usuario, leerUsuarios());
+  function cerrarSesion() {
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("usuario");
+    setUsuario(null);
+  }
 
   return (
     <div className="min-vh-100 d-flex flex-column">
-      <Navegacion unidades={contarUnidades(carrito)} usuario={sesionActual} />
+      <Navegacion unidades={contarUnidades(carrito)} usuario={usuario} />
 
       <div className="flex-grow-1">
         <Routes>
@@ -97,16 +93,19 @@ function App() {
               />
             }
           />
-          <Route
-            path="/checkout"
-            element={
-              <Checkout
-                carrito={carrito}
-                usuario={sesionActual}
-                onVaciar={vaciarCarrito}
-              />
-            }
-          />
+          <Route element={<RutaProtegida />}>
+            <Route
+              path="/checkout"
+              element={
+                <Checkout
+                  carrito={carrito}
+                  usuario={usuario}
+                  onVaciar={vaciarCarrito}
+                />
+              }
+            />
+            <Route path="/mis-pedidos" element={<MisPedidos />} />
+          </Route>
           <Route
             path="/categorias"
             element={<Categorias onAgregar={agregarAlCarrito} />}
@@ -123,9 +122,9 @@ function App() {
             path="/login"
             element={
               <Login
-                usuario={sesionActual}
+                usuario={usuario}
                 onIngresar={setUsuario}
-                onSalir={() => setUsuario(null)}
+                onSalir={cerrarSesion}
               />
             }
           />
@@ -133,31 +132,21 @@ function App() {
           <Route
             path="/admin/productos"
             element={
-              puedeAdministrar(sesionActual) ? <AdminProductos /> : <SinAcceso />
+              puedeAdministrar(usuario) ? <AdminProductos /> : <SinAcceso />
             }
           />
           <Route
-            path="/admin/usuarios"
+            path="/admin/pedidos"
             element={
-              esAdministrador(sesionActual) ?
-                <AdminUsuarios />
-              :
-                <SinAcceso />
+              puedeAdministrar(usuario) ? <GestionPedidos /> : <SinAcceso />
             }
           />
+          <Route element={<RutaProtegida rol="Administrador" />}>
+            <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+            <Route path="/admin/usuarios/nuevo" element={<UsuarioForm />} />
+            <Route path="/admin/usuarios/:id/editar" element={<UsuarioForm />} />
+          </Route>
           <Route path="*" element={<NoEncontrada />} />
-          <Route
-            path="/admin/usuarios/nuevo"
-            element={
-              esAdministrador(sesionActual) ? <UsuarioForm /> : <SinAcceso />
-            }
-          />
-          <Route
-            path="/admin/usuarios/:id/editar"
-            element={
-              esAdministrador(sesionActual) ? <UsuarioForm /> : <SinAcceso />
-            }
-          />
         </Routes>
       </div>
 

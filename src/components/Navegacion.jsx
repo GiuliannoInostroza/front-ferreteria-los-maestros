@@ -69,10 +69,20 @@ function Navegacion({ unidades, usuario }) {
               Carrito ({unidades})
             </NavLink>
 
+            {usuario && (
+              <NavLink className="nav-link" to="/mis-pedidos">
+                Mis pedidos
+              </NavLink>
+            )}
+
             {puedeAdministrar(usuario) && (
               <NavDropdown title="Administración" id="menu-admin">
                 <NavDropdown.Item as={NavLink} to="/admin/productos">
                   Productos
+                </NavDropdown.Item>
+
+                <NavDropdown.Item as={NavLink} to="/admin/pedidos">
+                  Pedidos
                 </NavDropdown.Item>
 
                 {esAdministrador(usuario) && (
@@ -84,7 +94,7 @@ function Navegacion({ unidades, usuario }) {
             )}
 
             <NavLink className="nav-link" to="/login">
-              {usuario ? usuario.nombre : "Ingresar"}
+              {usuario ? `${usuario.nombre} (${usuario.rol})` : "Ingresar"}
             </NavLink>
           </Nav>
         </Navbar.Collapse>

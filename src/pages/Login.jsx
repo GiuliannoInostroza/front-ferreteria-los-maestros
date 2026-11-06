@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { Button, Container, Form } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-import { leerUsuarios } from "../utils/persistencia";
-import { buscarUsuario } from "../utils/usuarios";
-import { hayErrores, validarLogin } from "../utils/validaciones";
+import { login } from "../services/authService";
 
-const inicial = { correo: "", contrasena: "" };
+const inicial = { correo: "", password: "" };
 
 function Login({ usuario, onIngresar, onSalir }) {
   const [datos, setDatos] = useState(inicial);
-  const [errores, setErrores] = useState({});
+  const [error, setError] = useState("");
+  const [enviando, setEnviando] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const navigate = useNavigate();
 
   function salir() {
     onSalir();
@@ -23,18 +23,28 @@ function Login({ usuario, onIngresar, onSalir }) {
     setDatos({ ...datos, [name]: value });
   }
 
-  function enviar(evento) {
+  async function enviar(evento) {
     evento.preventDefault();
-    const correo = datos.correo.trim().toLowerCase();
-    const encontrado = buscarUsuario(leerUsuarios(), correo);
-    const nuevosErrores = validarLogin(datos, encontrado);
-
-    setErrores(nuevosErrores);
-    if (hayErrores(nuevosErrores)) return;
-
-    onIngresar(encontrado);
-    setMensaje("");
-    setDatos(inicial);
+    setError("");
+    setEnviando(true);
+    try {
+      const sesion = await login(datos);
+      const usuarioSesion = {
+        nombre: sesion.nombre,
+        correo: sesion.correo,
+        rol: sesion.rol,
+      };
+      sessionStorage.setItem("token", sesion.token);
+      sessionStorage.setItem("usuario", JSON.stringify(usuarioSesion));
+      onIngresar(usuarioSesion);
+      setMensaje("");
+      setDatos(inicial);
+      navigate("/productos");
+    } catch {
+      setError("No fue posible iniciar sesión");
+    } finally {
+      setEnviando(false);
+    }
   }
 
   if (usuario) {
@@ -76,7 +86,7 @@ function Login({ usuario, onIngresar, onSalir }) {
 
         {mensaje && <p className="text-success fw-bold">{mensaje}</p>}
 
-        <Form onSubmit={enviar} noValidate>
+        <Form onSubmit={enviar}>
           <Form.Group className="mb-3" controlId="correo">
             <Form.Label>Correo</Form.Label>
             <Form.Control
@@ -84,28 +94,30 @@ function Login({ usuario, onIngresar, onSalir }) {
               name="correo"
               value={datos.correo}
               onChange={cambiar}
-              isInvalid={Boolean(errores.correo)}
+              required
             />
-            <Form.Control.Feedback type="invalid">
-              {errores.correo}
-            </Form.Control.Feedback>
           </Form.Group>
 
-          <Form.Group className="mb-3" controlId="contrasena">
+          <Form.Group className="mb-3" controlId="password">
             <Form.Label>Contraseña</Form.Label>
             <Form.Control
               type="password"
-              name="contrasena"
-              value={datos.contrasena}
+              name="password"
+              value={datos.password}
               onChange={cambiar}
-              isInvalid={Boolean(errores.contrasena)}
+              required
             />
-            <Form.Control.Feedback type="invalid">
-              {errores.contrasena}
-            </Form.Control.Feedback>
           </Form.Group>
 
-          <Button type="submit">Ingresar</Button>
+          {error && (
+            <p className="text-danger" role="alert">
+              {error}
+            </p>
+          )}
+
+          <Button type="submit" disabled={enviando}>
+            {enviando ? "Ingresando..." : "Ingresar"}
+          </Button>
         </Form>
 
         <p className="mt-3 mb-0">
