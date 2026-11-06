@@ -6,7 +6,7 @@ import {
 	actualizarUsuario,
 } from "../../services/usuarioService";
 
-const vacio = { nombre: "", correo: "", rol: "Cliente", activo: true };
+const vacio = { nombre: "", correo: "", password: "", rol: "Cliente", activo: true };
 
 export default function UsuarioForm() {
 	const [form, setForm] = useState(vacio);
@@ -28,7 +28,11 @@ export default function UsuarioForm() {
 		e.preventDefault();
 		setGuardando(true);
 		setError("");
-		const datos = { ...form, correo: form.correo.trim() };
+		const datos = {
+			...form,
+			correo: form.correo.trim(),
+			activo: String(form.activo) === "true",
+		};
 
 		try {
 			if (id) await actualizarUsuario(id, datos);
@@ -66,6 +70,20 @@ export default function UsuarioForm() {
 					maxLength="120"
 				/>
 			</label>
+			{!id && (
+				<label>
+					Contraseña
+					<input
+						name="password"
+						type="password"
+						value={form.password}
+						onChange={cambiar}
+						required
+						minLength="4"
+						maxLength="10"
+					/>
+				</label>
+			)}
 			<label>
 				Rol
 				<select name="rol" value={form.rol} onChange={cambiar} required>
@@ -74,6 +92,15 @@ export default function UsuarioForm() {
 					<option>Cliente</option>
 				</select>
 			</label>
+			{id && (
+				<label>
+					Estado
+					<select name="activo" value={String(form.activo)} onChange={cambiar}>
+						<option value="true">Activo</option>
+						<option value="false">Inactivo</option>
+					</select>
+				</label>
+			)}
 			<button disabled={guardando}>
 				{guardando ? "Guardando..." : "Guardar"}
 			</button>

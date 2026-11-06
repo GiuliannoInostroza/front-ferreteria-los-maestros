@@ -49,6 +49,7 @@ function AdminUsuarios() {
               <th>Nombre</th>
               <th>Correo</th>
               <th>Rol</th>
+              <th>Estado</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -58,6 +59,7 @@ function AdminUsuarios() {
                 <td>{usuario.nombre}</td>
                 <td>{usuario.correo}</td>
                 <td>{usuario.rol}</td>
+                <td>{usuario.activo ? "Activo" : "Inactivo"}</td>
                 <td>
                   <Link to={`/admin/usuarios/${usuario.id}/editar`}>Editar</Link>
                   <button className="ms-2" onClick={() => borrar(usuario.id)}>Eliminar</button>
