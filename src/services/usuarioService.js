@@ -1,37 +1,22 @@
-const API_URL = `${import.meta.env.VITE_API_URL}/usuarios`;
+const USUARIOS_URL = import.meta.env.VITE_USUARIOS_API_URL;
 
-async function procesarRespuesta(response) {
-	if (!response.ok) {
-		throw new Error(`La API respondió ${response.status}`);
-	}
-	return response.status === 204 ? null : response.json();
+async function request(ruta, opciones = {}) {
+  const token = sessionStorage.getItem("token");
+  const headers = { "Content-Type": "application/json", ...opciones.headers };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(`${USUARIOS_URL}${ruta}`, { ...opciones, headers });
+  if (!response.ok) throw new Error(`Solicitud rechazada: ${response.status}`);
+  return response.status === 204 ? null : response.json();
 }
 
-export async function listarUsuarios() {
-	const response = await fetch(API_URL);
-	return procesarRespuesta(response);
-}
-
-export async function buscarUsuario(id) {
-	return procesarRespuesta(await fetch(`${API_URL}/${id}`));
-}
-
-export async function crearUsuario(datos) {
-	return procesarRespuesta(await fetch(API_URL, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(datos),
-	}));
-}
-
-export async function actualizarUsuario(id, datos) {
-	return procesarRespuesta(await fetch(`${API_URL}/${id}`, {
-		method: "PUT",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(datos),
-	}));
-}
-
-export async function eliminarUsuario(id) {
-	return procesarRespuesta(await fetch(`${API_URL}/${id}`, { method: "DELETE" }));
-}
+export const listarUsuarios = () => request("/usuarios");
+export const buscarUsuario = id => request(`/usuarios/${id}`);
+export const crearUsuario = datos => request("/usuarios", {
+  method: "POST", body: JSON.stringify(datos)
+});
+export const actualizarUsuario = (id, datos) => request(`/usuarios/${id}`, {
+  method: "PUT", body: JSON.stringify(datos)
+});
+export const eliminarUsuario = id => request(`/usuarios/${id}`, {
+  method: "DELETE"
+});
