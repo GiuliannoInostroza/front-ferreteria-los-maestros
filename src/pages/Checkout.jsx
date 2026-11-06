@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { guardarProductos, leerProductos } from "../utils/persistencia";
 
 import CompraExitosa from "../components/CompraExitosa";
+import { crearPedido } from "../services/pedidoService";
 import CompraFallida from "../components/CompraFallida";
 import {
   actualizarConCatalogo,
@@ -18,6 +19,7 @@ const inicial = {
   correo: "",
   entrega: "Retiro en tienda",
   direccion: "",
+  medioPago: "Pago en tienda",
 };
 
 function descontarStock(carrito) {
@@ -53,7 +55,7 @@ function Checkout({ carrito, usuario, onVaciar }) {
     setDatos({ ...datos, [name]: value });
   }
 
-  function enviar(evento) {
+  async function enviar(evento) {
     evento.preventDefault();
 
     const nuevosErrores = validarCheckout(datos);
@@ -66,17 +68,35 @@ function Checkout({ carrito, usuario, onVaciar }) {
       return;
     }
 
-    setPedido({
-      ...datos,
-      direccion: datos.entrega === "Despacho a domicilio" ? datos.direccion : "",
-      productos: vigente,
-      total: calcularTotal(vigente),
-    });
+    try {
+      const creado = await crearPedido({
+        tipoEntrega: datos.entrega,
+        direccionDespacho:
+          datos.entrega === "Despacho a domicilio" ? datos.direccion : "",
+        medioPago: datos.medioPago,
+        detalles: vigente.map((item) => ({
+          codigoProducto: item.codigo,
+          nombreProducto: item.nombre,
+          cantidad: item.cantidad,
+          precioUnitario: item.precio,
+        })),
+      });
 
-    descontarStock(vigente);
+      setPedido({
+        ...datos,
+        numero: creado.id,
+        direccion: creado.direccionDespacho,
+        productos: vigente,
+        total: creado.total,
+      });
 
-    setResultado("exitosa");
-    onVaciar();
+      descontarStock(vigente);
+
+      setResultado("exitosa");
+      onVaciar();
+    } catch {
+      setResultado("fallida");
+    }
   }
 
   if (resultado === "exitosa") {
@@ -159,6 +179,20 @@ function Checkout({ carrito, usuario, onVaciar }) {
                 </Form.Control.Feedback>
               </Form.Group>
             )}
+
+            <Form.Group className="mb-3" controlId="medioPago">
+              <Form.Label>Medio de pago</Form.Label>
+              <select
+                className="form-select"
+                id="medioPago"
+                name="medioPago"
+                value={datos.medioPago}
+                onChange={cambiar}
+              >
+                <option>Pago en tienda</option>
+                <option>Transferencia</option>
+              </select>
+            </Form.Group>
 
             <button type="submit" className="btn btn-warning">
               Confirmar compra

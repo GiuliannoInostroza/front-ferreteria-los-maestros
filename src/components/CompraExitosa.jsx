@@ -15,10 +15,17 @@ function CompraExitosa({ pedido }) {
       <section className="resumen mb-4">
         <h2 className="h4">Resumen del pedido</h2>
         <p className="mb-1">
+          <strong>Pedido N.°:</strong> {pedido.numero}
+        </p>
+        <p className="mb-1">
           <strong>Correo:</strong> {pedido.correo}
         </p>
         <p className="mb-1">
           <strong>Entrega:</strong> {pedido.entrega}
+        </p>
+
+        <p className="mb-1">
+          <strong>Medio de pago:</strong> {pedido.medioPago}
         </p>
 
         {pedido.direccion && (
