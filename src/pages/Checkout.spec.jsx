@@ -17,6 +17,15 @@ describe("Checkout", () => {
   ];
 
   it("muestra errores con el formulario vacío y confirma la compra al corregirlos", async () => {
+    const espia = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        id: 15,
+        total: 11980,
+        direccionDespacho: "Av. Francisco de Aguirre 1234",
+      }),
+    });
     const usuario = userEvent.setup();
     const onVaciar = vi.fn();
     render(
@@ -38,9 +47,31 @@ describe("Checkout", () => {
     await usuario.type(screen.getByLabelText("Dirección"), "Av. Francisco de Aguirre 1234");
     await usuario.click(screen.getByRole("button", { name: /confirmar compra/i }));
 
+    expect(await screen.findByRole("heading", { name: /compra exitosa/i })).toBeInTheDocument();
     expect(onVaciar).toHaveBeenCalled();
-    expect(screen.getByRole("heading", { name: /compra exitosa/i })).toBeInTheDocument();
     expect(screen.getByText(/Av. Francisco de Aguirre 1234/)).toBeInTheDocument();
+    expect(espia).toHaveBeenCalledWith(
+      `${import.meta.env.VITE_PEDIDOS_API_URL}/pedidos`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          tipoEntrega: "Despacho a domicilio",
+          direccionDespacho: "Av. Francisco de Aguirre 1234",
+          medioPago: "Pago en tienda",
+          detalles: [
+            {
+              codigoProducto: "MC001",
+              nombreProducto: "Cemento Polpaico gris 25 kg",
+              cantidad: 2,
+              precioUnitario: 5990,
+            },
+          ],
+        }),
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    espia.mockRestore();
   });
 
   it("muestra los errores entregados por la validación y no vacía el carrito", async () => {
