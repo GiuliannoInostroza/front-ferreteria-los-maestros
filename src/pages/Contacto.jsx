@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Col, Container, Form, Row } from "react-bootstrap";
-
+import { enviarContacto } from "../services/contactoService";
 import { hayErrores, validarContacto } from "../utils/validaciones";
 
 const inicial = {
@@ -14,6 +14,8 @@ function Contacto() {
   const [datos, setDatos] = useState(inicial);
   const [errores, setErrores] = useState({});
   const [mensajeExito, setMensajeExito] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState("");
 
   function cambiar(evento) {
     const { name, value } = evento.target;
@@ -24,20 +26,30 @@ function Contacto() {
     });
   }
 
-  function enviar(evento) {
+  async function enviar(evento) {
     evento.preventDefault();
 
     const nuevosErrores = validarContacto(datos);
-
     setErrores(nuevosErrores);
+    setMensajeExito("");
+    setErrorEnvio("");
 
     if (hayErrores(nuevosErrores)) {
-      setMensajeExito("");
       return;
     }
 
-    setMensajeExito("Mensaje enviado correctamente");
-    setDatos(inicial);
+    setEnviando(true);
+
+    try {
+      await enviarContacto(datos);
+
+      setMensajeExito("Mensaje enviado correctamente");
+      setDatos(inicial);
+    } catch (error) {
+      setErrorEnvio(error.message);
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -104,7 +116,9 @@ function Contacto() {
               <Form.Label>Motivo de contacto</Form.Label>
               <select
                 id="contacto-asunto"
-                className={errores.asunto ? "form-select is-invalid" : "form-select"}
+                className={
+                  errores.asunto ? "form-select is-invalid" : "form-select"
+                }
                 name="asunto"
                 value={datos.asunto}
                 onChange={cambiar}
@@ -137,14 +151,22 @@ function Contacto() {
               </Form.Control.Feedback>
             </Form.Group>
 
-            <button type="submit" className="btn btn-warning">
-              Enviar mensaje
+            <button
+              type="submit"
+              className="btn btn-warning"
+              disabled={enviando}
+            >
+              {enviando ? "Enviando..." : "Enviar mensaje"}
             </button>
 
-            {mensajeExito && (
-              <p className="text-success mt-3">
-                {mensajeExito}
+            {errorEnvio && (
+              <p role="alert" className="text-danger mt-3">
+                {errorEnvio}
               </p>
+            )}
+
+            {mensajeExito && (
+              <p className="text-success mt-3">{mensajeExito}</p>
             )}
           </Form>
         </Col>

@@ -74,6 +74,7 @@ function App() {
 
       <div className="flex-grow-1">
         <Routes>
+          <Route path="/contacto" element={<Contacto />} />
           <Route
             path="/login"
             element={
@@ -127,7 +128,6 @@ function App() {
             <Route path="/nosotros" element={<Nosotros />} />
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/blogs/:id" element={<BlogDetalle />} />
-            <Route path="/contacto" element={<Contacto />} />
             <Route
               path="/admin/productos"
               element={
@@ -143,7 +143,10 @@ function App() {
             <Route element={<RutaProtegida rol="Administrador" />}>
               <Route path="/admin/usuarios" element={<AdminUsuarios />} />
               <Route path="/admin/usuarios/nuevo" element={<UsuarioForm />} />
-              <Route path="/admin/usuarios/:id/editar" element={<UsuarioForm />} />
+              <Route
+                path="/admin/usuarios/:id/editar"
+                element={<UsuarioForm />}
+              />
             </Route>
             <Route path="*" element={<NoEncontrada />} />
           </Route>
