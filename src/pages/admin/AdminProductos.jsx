@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
-import { Button, Container } from "react-bootstrap";
+import { Alert, Button, Container, Spinner } from "react-bootstrap";
 
 import { mensajeEliminado, mensajeGuardado } from "../../utils/mensajes";
-import { guardarProductos, leerProductos } from "../../utils/persistencia";
+import {
+  actualizarProducto,
+  crearProducto,
+  eliminarProducto,
+  listarCatalogo,
+} from "../../services/catalogoService";
 import { formatearPrecio } from "../../utils/precio";
 import FormularioProducto from "./FormularioProducto";
 
 function AdminProductos() {
-  const [listaProductos, setListaProductos] = useState(() => leerProductos());
+  const [listaProductos, setListaProductos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [productoEditando, setProductoEditando] = useState(null);
   const [hayCambios, setHayCambios] = useState(false);
@@ -15,19 +23,61 @@ function AdminProductos() {
   const [mensaje, setMensaje] = useState("");
 
   useEffect(() => {
-    guardarProductos(listaProductos);
-  }, [listaProductos]);
+    async function cargar() {
+      try {
+        setError("");
+        const catalogo = await listarCatalogo();
+        setListaProductos(catalogo.productos);
+        setCategorias(catalogo.categorias);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargar();
+  }, []);
 
-  function guardar(producto) {
+  function nombreCategoria(categoriaId) {
+    const categoria = categorias.find((item) => item.id === categoriaId);
+    return categoria ? categoria.nombre : "";
+  }
+
+  function conCategoria(producto) {
+    return { ...producto, categoria: nombreCategoria(producto.categoriaId) };
+  }
+
+  async function guardar(producto) {
+    const categoria = categorias.find((item) => item.nombre === producto.categoria);
+    const datos = {
+      codigo: producto.codigo,
+      nombre: producto.nombre,
+      marca: producto.marca,
+      descripcion: producto.descripcion,
+      precio: producto.precio,
+      stock: producto.stock,
+      stockCritico: producto.stockCritico,
+      destacado: Boolean(producto.destacado),
+      categoriaId: categoria.id,
+    };
+
+    try {
+      setError("");
+      if (productoEditando) {
+        const guardado = await actualizarProducto(productoEditando.id, datos);
+        setListaProductos(
+          listaProductos.map((item) => (item.id === guardado.id ? guardado : item))
+        );
+      } else {
+        const guardado = await crearProducto(datos);
+        setListaProductos([...listaProductos, guardado]);
+      }
+    } catch (e) {
+      setError(e.message);
+      return;
+    }
+
     setMensaje(mensajeGuardado("Producto", Boolean(productoEditando)));
-    setListaProductos(
-      productoEditando
-        ? listaProductos.map((item) =>
-            item.codigo === producto.codigo ? producto : item
-          )
-        : [...listaProductos, producto]
-    );
-
     setHayCambios(false);
 
     if (pendiente) {
@@ -51,11 +101,11 @@ function AdminProductos() {
     window.scrollTo(0, 0);
 
     if (mostrarFormulario && hayCambios) {
-      setPendiente(producto);
+      setPendiente(conCategoria(producto));
       return;
     }
 
-    setProductoEditando(producto);
+    setProductoEditando(conCategoria(producto));
     setMostrarFormulario(true);
   }
 
@@ -72,18 +122,32 @@ function AdminProductos() {
     setMostrarFormulario(false);
   }
 
-  function eliminar(codigo) {
-    setListaProductos(listaProductos.filter((item) => item.codigo !== codigo));
+  async function eliminar(producto) {
+    if (!window.confirm("¿Eliminar este producto?")) return;
+
+    try {
+      setError("");
+      await eliminarProducto(producto.id);
+    } catch (e) {
+      setError(e.message);
+      return;
+    }
+
+    setListaProductos(listaProductos.filter((item) => item.id !== producto.id));
     setMensaje(mensajeEliminado("Producto"));
 
-    if (productoEditando && productoEditando.codigo === codigo) {
+    if (productoEditando && productoEditando.id === producto.id) {
       cancelar();
     }
   }
 
+  if (cargando) return <Spinner aria-label="Cargando productos" />;
+
   return (
     <Container className="py-4">
       <h1>Administración de productos</h1>
+
+      {error && <Alert variant="danger">{error}</Alert>}
 
       {mensaje && <p className="text-success fw-bold">{mensaje}</p>}
 
@@ -113,6 +177,7 @@ function AdminProductos() {
 
           <FormularioProducto
             productos={listaProductos}
+            categorias={categorias.map((item) => item.nombre)}
             producto={productoEditando}
             onGuardar={guardar}
             onCancelar={cancelar}
@@ -137,16 +202,18 @@ function AdminProductos() {
           </thead>
           <tbody>
             {listaProductos.map((producto) => (
-              <tr key={producto.codigo}>
+              <tr key={producto.id}>
                 <td className="d-none d-md-table-cell">{producto.codigo}</td>
                 <td>
                   <div>{producto.nombre}</div>
                   <div className="text-secondary small d-lg-none">
-                    {producto.marca} - {producto.categoria}
+                    {producto.marca} - {nombreCategoria(producto.categoriaId)}
                   </div>
                 </td>
                 <td className="d-none d-lg-table-cell">{producto.marca}</td>
-                <td className="d-none d-lg-table-cell">{producto.categoria}</td>
+                <td className="d-none d-lg-table-cell">
+                  {nombreCategoria(producto.categoriaId)}
+                </td>
                 <td>{formatearPrecio(producto.precio)}</td>
                 <td>{producto.stock}</td>
                 <td className="d-none d-lg-table-cell">{producto.stockCritico}</td>
@@ -157,7 +224,7 @@ function AdminProductos() {
                     </Button>
                     <Button
                       className="btn-sm"
-                      onClick={() => eliminar(producto.codigo)}
+                      onClick={() => eliminar(producto)}
                     >
                       Eliminar
                     </Button>

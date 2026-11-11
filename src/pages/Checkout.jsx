@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Col, Container, Form, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { guardarProductos, leerProductos } from "../utils/persistencia";
 
 import CompraExitosa from "../components/CompraExitosa";
+import { cargarCatalogo, descontarStock } from "../services/catalogoService";
 import { crearPedido } from "../services/pedidoService";
 import CompraFallida from "../components/CompraFallida";
 import {
@@ -22,22 +22,6 @@ const inicial = {
   medioPago: "Pago en tienda",
 };
 
-function descontarStock(carrito) {
-  const productosActuales = leerProductos();
-
-  const productosActualizados = productosActuales.map((producto) => {
-    const comprado = carrito.find((item) => item.codigo === producto.codigo);
-
-    if (!comprado) return producto;
-
-    return {
-      ...producto,
-      stock: producto.stock - comprado.cantidad,
-    };
-  });
-
-  guardarProductos(productosActualizados);
-}
 function Checkout({ carrito, usuario, onVaciar }) {
   const [datos, setDatos] = useState(
     usuario
@@ -48,7 +32,21 @@ function Checkout({ carrito, usuario, onVaciar }) {
   const [resultado, setResultado] = useState("");
   const [pedido, setPedido] = useState(null);
 
-  const vigente = actualizarConCatalogo(carrito, leerProductos());
+  const [catalogo, setCatalogo] = useState(null);
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const actual = await cargarCatalogo();
+        setCatalogo(actual.productos);
+      } catch {
+        setCatalogo(null);
+      }
+    }
+    cargar();
+  }, []);
+
+  const vigente = catalogo ? actualizarConCatalogo(carrito, catalogo) : carrito;
 
   function cambiar(evento) {
     const { name, value } = evento.target;
@@ -63,18 +61,21 @@ function Checkout({ carrito, usuario, onVaciar }) {
     setErrores(nuevosErrores);
     if (hayErrores(nuevosErrores)) return;
 
-    if (hayProductoSinStock(vigente)) {
-      setResultado("fallida");
-      return;
-    }
-
     try {
+      const actual = await cargarCatalogo();
+      const items = actualizarConCatalogo(carrito, actual.productos);
+
+      if (hayProductoSinStock(items)) {
+        setResultado("fallida");
+        return;
+      }
+
       const creado = await crearPedido({
         tipoEntrega: datos.entrega,
         direccionDespacho:
           datos.entrega === "Despacho a domicilio" ? datos.direccion : "",
         medioPago: datos.medioPago,
-        detalles: vigente.map((item) => ({
+        detalles: items.map((item) => ({
           codigoProducto: item.codigo,
           nombreProducto: item.nombre,
           cantidad: item.cantidad,
@@ -86,11 +87,13 @@ function Checkout({ carrito, usuario, onVaciar }) {
         ...datos,
         numero: creado.id,
         direccion: creado.direccionDespacho,
-        productos: vigente,
+        productos: items,
         total: creado.total,
       });
 
-      descontarStock(vigente);
+      await descontarStock(
+        items.map((item) => ({ productoId: item.id, cantidad: item.cantidad })),
+      );
 
       setResultado("exitosa");
       onVaciar();

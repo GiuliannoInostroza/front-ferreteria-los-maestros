@@ -8,6 +8,7 @@ import Checkout from "./Checkout";
 describe("Checkout", () => {
   const carrito = [
     {
+      id: 1,
       codigo: "MC001",
       nombre: "Cemento",
       precio: 5990,
@@ -16,15 +17,30 @@ describe("Checkout", () => {
     },
   ];
 
+  const respuestaCatalogo = {
+    productos: [
+      {
+        id: 1,
+        codigo: "MC001",
+        nombre: "Cemento Polpaico gris 25 kg",
+        precio: 5990,
+        stock: 80,
+        stockCritico: 20,
+        categoriaId: 1,
+      },
+    ],
+    categorias: [{ id: 1, nombre: "Materiales de Construcción" }],
+    ofertas: [],
+    id: 15,
+    total: 11980,
+    direccionDespacho: "Av. Francisco de Aguirre 1234",
+  };
+
   it("muestra errores con el formulario vacío y confirma la compra al corregirlos", async () => {
     const espia = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       status: 201,
-      json: async () => ({
-        id: 15,
-        total: 11980,
-        direccionDespacho: "Av. Francisco de Aguirre 1234",
-      }),
+      json: async () => respuestaCatalogo,
     });
     const usuario = userEvent.setup();
     const onVaciar = vi.fn();
@@ -49,6 +65,14 @@ describe("Checkout", () => {
 
     expect(await screen.findByRole("heading", { name: /compra exitosa/i })).toBeInTheDocument();
     expect(onVaciar).toHaveBeenCalled();
+    expect(espia).toHaveBeenCalledWith(
+      `${import.meta.env.VITE_CATALOGO_API_URL}/productos/descontar-stock`,
+      {
+        method: "POST",
+        body: JSON.stringify({ items: [{ productoId: 1, cantidad: 2 }] }),
+        headers: { "Content-Type": "application/json" },
+      }
+    );
     expect(screen.getByText(/Av. Francisco de Aguirre 1234/)).toBeInTheDocument();
     expect(espia).toHaveBeenCalledWith(
       `${import.meta.env.VITE_PEDIDOS_API_URL}/pedidos`,
@@ -96,6 +120,11 @@ describe("Checkout", () => {
   });
 
   it("muestra el pago fallido cuando un producto supera el stock", async () => {
+    const espia = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => respuestaCatalogo,
+    });
     const usuario = userEvent.setup();
     const sinStock = [{ ...carrito[0], cantidad: 81 }];
     render(
@@ -108,10 +137,12 @@ describe("Checkout", () => {
     await usuario.type(screen.getByLabelText("Correo"), "giu@duocuc.cl");
     await usuario.click(screen.getByRole("button", { name: /confirmar compra/i }));
     expect(
-      screen.getByRole("heading", { name: /no se pudo realizar el pago/i })
+      await screen.findByRole("heading", { name: /no se pudo realizar el pago/i })
     ).toBeInTheDocument();
 
     await usuario.click(screen.getByRole("button", { name: /volver a intentar/i }));
     expect(screen.getByRole("heading", { name: /finalizar compra/i })).toBeInTheDocument();
+
+    espia.mockRestore();
   });
 });

@@ -1,15 +1,36 @@
-import { useState } from "react";
-import { Col, Container, Form, Row } from "react-bootstrap";
+import { useEffect, useState } from "react";
+import { Alert, Col, Container, Form, Row, Spinner } from "react-bootstrap";
 
 import TarjetaProducto from "../components/TarjetaProducto";
-import { categorias } from "../data/productos";
+import { cargarCatalogo } from "../services/catalogoService";
 import { mensajeAgregado } from "../utils/mensajes";
-import { leerProductos } from "../utils/persistencia";
 
 function Productos({ onAgregar }) {
   const [categoria, setCategoria] = useState("Todas");
   const [mensaje, setMensaje] = useState("");
-  const productos = leerProductos();
+  const [productos, setProductos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        setError("");
+        const catalogo = await cargarCatalogo();
+        setProductos(catalogo.productos);
+        setCategorias(catalogo.categorias);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargar();
+  }, []);
+
+  if (cargando) return <Spinner aria-label="Cargando productos" />;
+  if (error) return <Alert variant="danger">{error}</Alert>;
 
   function agregar(producto) {
     onAgregar(producto);
