@@ -34,7 +34,7 @@ import {
   quitarProducto,
 } from "./utils/carrito";
 import { guardarCarrito, leerCarrito } from "./utils/persistencia";
-import { puedeAdministrar } from "./utils/sesion";
+import { esAdministrador, puedeAdministrar } from "./utils/sesion";
 import UsuarioForm from "./pages/admin/UsuarioForm";
 
 function App() {
@@ -134,7 +134,7 @@ function App() {
             <Route
               path="/admin/productos"
               element={
-                puedeAdministrar(usuario) ? <AdminProductos /> : <SinAcceso />
+                esAdministrador(usuario) ? <AdminProductos /> : <SinAcceso />
               }
             />
             <Route
