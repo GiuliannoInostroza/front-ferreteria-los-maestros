@@ -23,6 +23,8 @@ import AdminProductos from "./pages/admin/AdminProductos";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import GestionPedidos from "./pages/admin/GestionPedidos";
 import MisPedidos from "./pages/MisPedidos";
+import MiCuenta from "./pages/MiCuenta";
+import AdminCuentas from "./pages/admin/AdminCuentas";
 import NoEncontrada from "./pages/NoEncontrada";
 
 import {
@@ -116,6 +118,7 @@ function App() {
               }
             />
             <Route path="/mis-pedidos" element={<MisPedidos />} />
+            <Route path="/mi-cuenta" element={<MiCuenta />} />
             <Route
               path="/categorias"
               element={<Categorias onAgregar={agregarAlCarrito} />}
@@ -142,6 +145,7 @@ function App() {
             />
             <Route element={<RutaProtegida rol="Administrador" />}>
               <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+              <Route path="/admin/cuentas" element={<AdminCuentas />} />
               <Route path="/admin/usuarios/nuevo" element={<UsuarioForm />} />
               <Route path="/admin/usuarios/:id/editar" element={<UsuarioForm />} />
             </Route>

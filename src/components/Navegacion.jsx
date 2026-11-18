@@ -75,6 +75,12 @@ function Navegacion({ unidades, usuario }) {
               </NavLink>
             )}
 
+            {usuario && (
+              <NavLink className="nav-link" to="/mi-cuenta">
+                Mi cuenta corriente
+              </NavLink>
+            )}
+
             {puedeAdministrar(usuario) && (
               <NavDropdown title="Administración" id="menu-admin">
                 <NavDropdown.Item as={NavLink} to="/admin/productos">
@@ -88,6 +94,12 @@ function Navegacion({ unidades, usuario }) {
                 {esAdministrador(usuario) && (
                   <NavDropdown.Item as={NavLink} to="/admin/usuarios">
                     Usuarios
+                  </NavDropdown.Item>
+                )}
+
+                {esAdministrador(usuario) && (
+                  <NavDropdown.Item as={NavLink} to="/admin/cuentas">
+                    Cuentas corrientes
                   </NavDropdown.Item>
                 )}
               </NavDropdown>
