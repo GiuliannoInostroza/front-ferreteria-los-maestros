@@ -100,6 +100,18 @@ function Navegacion({ unidades, usuario }) {
                 )}
 
                 {esAdministrador(usuario) && (
+                  <NavDropdown.Item as={NavLink} to="/admin/ofertas">
+                    Ofertas
+                  </NavDropdown.Item>
+                )}
+
+                {esAdministrador(usuario) && (
+                  <NavDropdown.Item as={NavLink} to="/admin/alertas">
+                    Alertas de stock
+                  </NavDropdown.Item>
+                )}
+
+                {esAdministrador(usuario) && (
                   <NavDropdown.Item as={NavLink} to="/admin/cuentas">
                     Cuentas corrientes
                   </NavDropdown.Item>

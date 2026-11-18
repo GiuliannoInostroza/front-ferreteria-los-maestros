@@ -24,6 +24,13 @@ export const eliminarProducto = id => request(`/productos/${id}`, {
 export const descontarStock = items => request("/productos/descontar-stock", {
   method: "POST", body: JSON.stringify({ items })
 });
+export const listarAlertas = () => request("/productos/alertas");
+export const crearOferta = datos => request("/ofertas", {
+  method: "POST", body: JSON.stringify(datos)
+});
+export const eliminarOferta = id => request(`/ofertas/${id}`, {
+  method: "DELETE"
+});
 
 export async function cargarCatalogo() {
   const catalogo = await listarCatalogo();

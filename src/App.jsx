@@ -25,6 +25,8 @@ import GestionPedidos from "./pages/admin/GestionPedidos";
 import MisPedidos from "./pages/MisPedidos";
 import MiCuenta from "./pages/MiCuenta";
 import AdminCuentas from "./pages/admin/AdminCuentas";
+import AdminOfertas from "./pages/admin/AdminOfertas";
+import AdminAlertas from "./pages/admin/AdminAlertas";
 import NoEncontrada from "./pages/NoEncontrada";
 
 import {
@@ -146,6 +148,8 @@ function App() {
             <Route element={<RutaProtegida rol="Administrador" />}>
               <Route path="/admin/usuarios" element={<AdminUsuarios />} />
               <Route path="/admin/cuentas" element={<AdminCuentas />} />
+              <Route path="/admin/ofertas" element={<AdminOfertas />} />
+              <Route path="/admin/alertas" element={<AdminAlertas />} />
               <Route path="/admin/usuarios/nuevo" element={<UsuarioForm />} />
               <Route path="/admin/usuarios/:id/editar" element={<UsuarioForm />} />
             </Route>
