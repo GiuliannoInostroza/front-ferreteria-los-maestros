@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, Col, Form, Row } from "react-bootstrap";
 
-import { categorias } from "../../data/productos";
 import { hayErrores, validarProducto } from "../../utils/validaciones";
 
 const inicial = {
@@ -16,6 +15,7 @@ const inicial = {
 
 function FormularioProducto({
   productos,
+  categorias,
   producto,
   onGuardar,
   onCancelar,

@@ -75,11 +75,19 @@ function Navegacion({ unidades, usuario }) {
               </NavLink>
             )}
 
+            {usuario && (
+              <NavLink className="nav-link" to="/mi-cuenta">
+                Mi cuenta corriente
+              </NavLink>
+            )}
+
             {puedeAdministrar(usuario) && (
               <NavDropdown title="Administración" id="menu-admin">
-                <NavDropdown.Item as={NavLink} to="/admin/productos">
-                  Productos
-                </NavDropdown.Item>
+                {esAdministrador(usuario) && (
+                  <NavDropdown.Item as={NavLink} to="/admin/productos">
+                    Productos
+                  </NavDropdown.Item>
+                )}
 
                 <NavDropdown.Item as={NavLink} to="/admin/pedidos">
                   Pedidos
@@ -88,6 +96,24 @@ function Navegacion({ unidades, usuario }) {
                 {esAdministrador(usuario) && (
                   <NavDropdown.Item as={NavLink} to="/admin/usuarios">
                     Usuarios
+                  </NavDropdown.Item>
+                )}
+
+                {esAdministrador(usuario) && (
+                  <NavDropdown.Item as={NavLink} to="/admin/ofertas">
+                    Ofertas
+                  </NavDropdown.Item>
+                )}
+
+                {esAdministrador(usuario) && (
+                  <NavDropdown.Item as={NavLink} to="/admin/alertas">
+                    Alertas de stock
+                  </NavDropdown.Item>
+                )}
+
+                {esAdministrador(usuario) && (
+                  <NavDropdown.Item as={NavLink} to="/admin/cuentas">
+                    Cuentas corrientes
                   </NavDropdown.Item>
                 )}
               </NavDropdown>

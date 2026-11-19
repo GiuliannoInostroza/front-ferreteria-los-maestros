@@ -23,6 +23,10 @@ import AdminProductos from "./pages/admin/AdminProductos";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import GestionPedidos from "./pages/admin/GestionPedidos";
 import MisPedidos from "./pages/MisPedidos";
+import MiCuenta from "./pages/MiCuenta";
+import AdminCuentas from "./pages/admin/AdminCuentas";
+import AdminOfertas from "./pages/admin/AdminOfertas";
+import AdminAlertas from "./pages/admin/AdminAlertas";
 import NoEncontrada from "./pages/NoEncontrada";
 
 import {
@@ -32,7 +36,7 @@ import {
   quitarProducto,
 } from "./utils/carrito";
 import { guardarCarrito, leerCarrito } from "./utils/persistencia";
-import { puedeAdministrar } from "./utils/sesion";
+import { esAdministrador, puedeAdministrar } from "./utils/sesion";
 import UsuarioForm from "./pages/admin/UsuarioForm";
 
 function App() {
@@ -117,6 +121,7 @@ function App() {
               }
             />
             <Route path="/mis-pedidos" element={<MisPedidos />} />
+            <Route path="/mi-cuenta" element={<MiCuenta />} />
             <Route
               path="/categorias"
               element={<Categorias onAgregar={agregarAlCarrito} />}
@@ -131,7 +136,7 @@ function App() {
             <Route
               path="/admin/productos"
               element={
-                puedeAdministrar(usuario) ? <AdminProductos /> : <SinAcceso />
+                esAdministrador(usuario) ? <AdminProductos /> : <SinAcceso />
               }
             />
             <Route
@@ -142,6 +147,9 @@ function App() {
             />
             <Route element={<RutaProtegida rol="Administrador" />}>
               <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+              <Route path="/admin/cuentas" element={<AdminCuentas />} />
+              <Route path="/admin/ofertas" element={<AdminOfertas />} />
+              <Route path="/admin/alertas" element={<AdminAlertas />} />
               <Route path="/admin/usuarios/nuevo" element={<UsuarioForm />} />
               <Route
                 path="/admin/usuarios/:id/editar"
