@@ -90,6 +90,8 @@ function App() {
             }
           />
           <Route path="/registro" element={<Registro />} />
+          <Route path="/blogs" element={<Blogs />} />
+          <Route path="/blogs/:id" element={<BlogDetalle />} />
           <Route element={<RutaProtegida />}>
             <Route path="/" element={<Inicio />} />
             <Route
@@ -131,8 +133,6 @@ function App() {
               element={<Ofertas onAgregar={agregarAlCarrito} />}
             />
             <Route path="/nosotros" element={<Nosotros />} />
-            <Route path="/blogs" element={<Blogs />} />
-            <Route path="/blogs/:id" element={<BlogDetalle />} />
             <Route
               path="/admin/productos"
               element={
