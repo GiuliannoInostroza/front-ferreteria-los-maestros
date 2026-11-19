@@ -1,9 +1,36 @@
 import { Col, Container, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
-
-import { blogs } from "../data/blogs";
+import { useEffect, useState } from "react";
+import { listarBlogs } from "../services/blogService";
 
 function Blogs() {
+  const [blogs, setBlogs] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function cargarBlogs() {
+      try {
+        const datos = await listarBlogs();
+        setBlogs(datos);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setCargando(false);
+      }
+    }
+
+    cargarBlogs();
+  }, []);
+
+  if (cargando) {
+    return <p>Cargando artículos...</p>;
+  }
+
+  if (error) {
+    return <p role="alert">Error: {error}</p>;
+  }
+
   return (
     <Container className="py-4">
       <header className="mb-4">
