@@ -83,7 +83,7 @@ function Navegacion({ unidades, usuario }) {
 
             {puedeAdministrar(usuario) && (
               <NavDropdown title="Administración" id="menu-admin">
-                {esAdministrador(usuario) && (
+                {puedeAdministrar(usuario) && (
                   <NavDropdown.Item as={NavLink} to="/admin/productos">
                     Productos
                   </NavDropdown.Item>

@@ -11,7 +11,7 @@ import {
 import { formatearPrecio } from "../../utils/precio";
 import FormularioProducto from "./FormularioProducto";
 
-function AdminProductos() {
+function AdminProductos({ puedeEliminar = true }) {
   const [listaProductos, setListaProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -222,12 +222,14 @@ function AdminProductos() {
                     <Button className="btn-sm" onClick={() => editar(producto)}>
                       Editar
                     </Button>
-                    <Button
-                      className="btn-sm"
-                      onClick={() => eliminar(producto)}
-                    >
-                      Eliminar
-                    </Button>
+                    {puedeEliminar && (
+                      <Button
+                        className="btn-sm"
+                        onClick={() => eliminar(producto)}
+                      >
+                        Eliminar
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>

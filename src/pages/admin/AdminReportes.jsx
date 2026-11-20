@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Alert, Col, Container, Row, Spinner } from "react-bootstrap";
-import { listarPedidos } from "../../services/pedidoService";
+import { listarPedidos, listarDetallesReporte } from "../../services/pedidoService";
 import { formatearMonto } from "../../utils/precio";
 
 function AdminReportes() {
   const [pedidos, setPedidos] = useState([]);
+  const [detalles, setDetalles] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [estado, setEstado] = useState("Todos");
@@ -17,7 +18,11 @@ function AdminReportes() {
     async function cargar() {
       try {
         const datos = await listarPedidos();
-        if (activo) setPedidos(datos);
+        const productosPedido = await listarDetallesReporte();
+        if (activo) {
+          setPedidos(datos);
+          setDetalles(productosPedido);
+        }
       } catch (e) {
         if (activo) setError(e.message);
       } finally {
@@ -57,28 +62,39 @@ function AdminReportes() {
     .filter(Boolean)
     .sort();
 
+  // Contamos los pedidos realizados por cada cliente.
   const resumenClientes = {};
-
   for (const pedido of pedidosFiltrados) {
-    if (pedido.estado === "Cancelado" || !pedido.correoCliente) {
-      continue;
-    }
+    if (pedido.estado === "Cancelado" || !pedido.correoCliente) continue;
 
     const correo = pedido.correoCliente;
-
     if (!resumenClientes[correo]) {
-      resumenClientes[correo] = {
-        correo: correo,
-        cantidad: 0,
-        total: 0,
-      };
+      resumenClientes[correo] = { correo, cantidad: 0, total: 0 };
     }
-
     resumenClientes[correo].cantidad += 1;
     resumenClientes[correo].total += Number(pedido.total || 0);
   }
-
   const clientesFrecuentes = Object.values(resumenClientes)
+    .sort((a, b) => b.cantidad - a.cantidad)
+    .slice(0, 10);
+
+  // Contamos las unidades vendidas por producto, sin incluir pedidos cancelados.
+  const resumenProductos = {};
+  for (const detalle of detalles) {
+    const pedido = pedidosFiltrados.find((p) => p.id === detalle.pedidoId);
+    if (!pedido || pedido.estado === "Cancelado") continue;
+
+    const codigo = detalle.codigoProducto;
+    if (!resumenProductos[codigo]) {
+      resumenProductos[codigo] = {
+        codigo,
+        nombre: detalle.nombreProducto,
+        cantidad: 0,
+      };
+    }
+    resumenProductos[codigo].cantidad += Number(detalle.cantidad || 0);
+  }
+  const productosMasVendidos = Object.values(resumenProductos)
     .sort((a, b) => b.cantidad - a.cantidad)
     .slice(0, 10);
 
@@ -174,33 +190,63 @@ function AdminReportes() {
         El monto excluye pedidos cancelados y no representa necesariamente pagos
         recibidos.
       </p>
+
       <h2 className="h4">Clientes más frecuentes</h2>
-
-      <p className="text-secondary">
-        Pedidos no cancelados según los filtros seleccionados.
+      <p className="text-secondary small">
+        Se cuentan los pedidos no cancelados dentro de los filtros elegidos.
       </p>
-
-      <div className="table-responsive mb-4">
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Cantidad de pedidos</th>
-              <th>Monto total</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {clientesFrecuentes.map((cliente) => (
-              <tr key={cliente.correo}>
-                <td>{cliente.correo}</td>
-                <td>{cliente.cantidad}</td>
-                <td>{formatearMonto(cliente.total)}</td>
+      {clientesFrecuentes.length === 0 ? (
+        <Alert variant="info">No hay clientes para mostrar.</Alert>
+      ) : (
+        <div className="table-responsive mb-4">
+          <table className="table table-striped">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Pedidos</th>
+                <th>Monto de pedidos</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {clientesFrecuentes.map((cliente) => (
+                <tr key={cliente.correo}>
+                  <td>{cliente.correo}</td>
+                  <td>{cliente.cantidad}</td>
+                  <td>{formatearMonto(cliente.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <h2 className="h4">Productos más vendidos</h2>
+      <p className="text-secondary small">
+        Unidades registradas en pedidos no cancelados dentro de los filtros.
+      </p>
+      {productosMasVendidos.length === 0 ? (
+        <Alert variant="info">No hay productos vendidos para mostrar.</Alert>
+      ) : (
+        <div className="table-responsive mb-4">
+          <table className="table table-striped">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Unidades</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productosMasVendidos.map((producto) => (
+                <tr key={producto.codigo}>
+                  <td>{producto.nombre}</td>
+                  <td>{producto.cantidad}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <h2 className="h4">Detalle de pedidos</h2>
 
       {pedidosFiltrados.length === 0 ? (

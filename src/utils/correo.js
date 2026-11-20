@@ -1,12 +1,5 @@
-const dominiosPermitidos = [
-  "@duocuc.cl",
-  "@duoc.cl",
-  "@profesor.duoc.cl",
-  "@gmail.com",
-];
-
 export function correoConDominioPermitido(correo) {
-  const valor = correo.trim().toLowerCase();
-
-  return dominiosPermitidos.some((dominio) => valor.endsWith(dominio));
+  // El cliente puede usar cualquier proveedor, no solo Duoc o Gmail.
+  const valor = correo.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
 }

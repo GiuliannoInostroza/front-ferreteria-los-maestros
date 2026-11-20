@@ -14,6 +14,7 @@ import {
 } from "../utils/carrito";
 import { formatearPrecio } from "../utils/precio";
 import { hayErrores, validarCheckout } from "../utils/validaciones";
+import MapaCobertura from "../components/MapaCobertura";
 
 const inicial = {
   nombre: "",
@@ -38,7 +39,7 @@ function Checkout({ carrito, usuario, onVaciar }) {
   const [enviando, setEnviando] = useState(false);
   const [errorCompra, setErrorCompra] = useState("");
   const [pedidoParcial, setPedidoParcial] = useState(null);
-
+  const [puntoEnCobertura, setPuntoEnCobertura] = useState(null);
   const [catalogo, setCatalogo] = useState(null);
 
   useEffect(() => {
@@ -72,6 +73,9 @@ function Checkout({ carrito, usuario, onVaciar }) {
   function cambiar(evento) {
     const { name, value } = evento.target;
     setDatos({ ...datos, [name]: value });
+    if (name === "direccion" || name === "comuna" || name === "entrega") {
+      setPuntoEnCobertura(null);
+    }
   }
 
   async function enviar(evento) {
@@ -83,6 +87,12 @@ function Checkout({ carrito, usuario, onVaciar }) {
     if (datos.entrega === "Despacho a domicilio") {
       if (datos.comuna !== "La Serena") {
         nuevosErrores.comuna = "Solo realizamos despachos en La Serena";
+      }
+      if (datos.entrega === "Despacho a domicilio") {
+        if (puntoEnCobertura !== true) {
+          nuevosErrores.cobertura =
+            "Selecciona un punto dentro de la zona de despacho";
+        }
       }
     }
 
@@ -279,16 +289,29 @@ function Checkout({ carrito, usuario, onVaciar }) {
 
                 <div className="mb-3">
                   <h2 className="h5">Zona de despacho</h2>
-                  <p>Actualmente realizamos despachos en La Serena.</p>
 
-                  <iframe
-                    title="Mapa de La Serena"
-                    src="https://www.google.com/maps?q=La+Serena,+Chile&output=embed"
-                    width="100%"
-                    height="250"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                  />
+                  <p>
+                    Selecciona en el mapa el punto correspondiente a tu
+                    dirección de entrega.
+                  </p>
+
+                  <MapaCobertura onVerificar={setPuntoEnCobertura} />
+
+                  {puntoEnCobertura === true && (
+                    <p className="text-success mt-2">
+                      El punto está dentro de la cobertura.
+                    </p>
+                  )}
+
+                  {puntoEnCobertura === false && (
+                    <p className="text-danger mt-2">
+                      El punto está fuera de la cobertura.
+                    </p>
+                  )}
+
+                  {errores.cobertura && (
+                    <p className="text-danger">{errores.cobertura}</p>
+                  )}
                 </div>
               </>
             )}

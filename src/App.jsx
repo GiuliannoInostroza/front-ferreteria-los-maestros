@@ -137,7 +137,9 @@ function App() {
             <Route
               path="/admin/productos"
               element={
-                esAdministrador(usuario) ? <AdminProductos /> : <SinAcceso />
+                puedeAdministrar(usuario) ? (
+                  <AdminProductos puedeEliminar={esAdministrador(usuario)} />
+                ) : <SinAcceso />
               }
             />
             <Route
