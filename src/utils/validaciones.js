@@ -16,9 +16,9 @@ export function validarCheckout(datos) {
   if (!datos.correo.trim()) {
     errores.correo = "Correo obligatorio";
   }
-  if (datos.correo.trim() && !correoConDominioPermitido(datos.correo)) {
-    errores.correo =
-      "Usa un correo @duocuc.cl, @duoc.cl, @profesor.duoc.cl o @gmail.com";
+  // Checkout: respeta el email del usuario autenticado, incluso el cliente demo.
+  if (datos.correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.correo.trim())) {
+    errores.correo = "Ingresa un correo electrónico válido";
   }
 
   if (datos.entrega === "Despacho a domicilio") {
