@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Alert, Container, Spinner } from "react-bootstrap";
-
+import MapaDespacho from "../../components/MapaDespacho";
 import { actualizarPedido, listarPedidos } from "../../services/pedidoService";
 import { formatearPrecio } from "../../utils/precio";
 
@@ -18,6 +18,7 @@ function GestionPedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [pedidoMapa, setPedidoMapa] = useState(null);
 
   useEffect(() => {
     async function cargar() {
@@ -35,8 +36,13 @@ function GestionPedidos() {
 
   async function cambiarEstado(pedido, estado) {
     try {
-      const actualizado = await actualizarPedido(pedido.id, { ...pedido, estado });
-      setPedidos(actual => actual.map(p => (p.id === pedido.id ? actualizado : p)));
+      const actualizado = await actualizarPedido(pedido.id, {
+        ...pedido,
+        estado,
+      });
+      setPedidos((actual) =>
+        actual.map((p) => (p.id === pedido.id ? actualizado : p)),
+      );
     } catch (e) {
       setError(e.message);
     }
@@ -59,10 +65,11 @@ function GestionPedidos() {
               <th>Entrega</th>
               <th>Total</th>
               <th>Estado</th>
+              <th>Ubicación</th>
             </tr>
           </thead>
           <tbody>
-            {pedidos.map(pedido => (
+            {pedidos.map((pedido) => (
               <tr key={pedido.id}>
                 <td>{pedido.id}</td>
                 <td>{pedido.correoCliente}</td>
@@ -74,18 +81,40 @@ function GestionPedidos() {
                     className="form-select"
                     aria-label={`Estado del pedido ${pedido.id}`}
                     value={pedido.estado}
-                    onChange={e => cambiarEstado(pedido, e.target.value)}
+                    onChange={(e) => cambiarEstado(pedido, e.target.value)}
                   >
-                    {estados.map(estado => (
+                    {estados.map((estado) => (
                       <option key={estado}>{estado}</option>
                     ))}
                   </select>
+                </td>
+                <td>
+                  {pedido.tipoEntrega === "Despacho a domicilio" &&
+                  pedido.direccionDespacho ? (
+                    <button
+                      type="button"
+                      className="btn btn-outline-warning btn-sm"
+                      onClick={() =>
+                        setPedidoMapa((actual) =>
+                          actual?.id === pedido.id ? null : pedido,
+                        )
+                      }
+                    >
+                      {pedidoMapa?.id === pedido.id
+                        ? "Ocultar mapa"
+                        : "Ver mapa"}
+                    </button>
+                  ) : (
+                    <span className="text-secondary">No aplica</span>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {pedidoMapa && <MapaDespacho direccion={pedidoMapa.direccionDespacho} />}
     </Container>
   );
 }

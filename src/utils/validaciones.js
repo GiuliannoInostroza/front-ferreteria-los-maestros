@@ -16,9 +16,9 @@ export function validarCheckout(datos) {
   if (!datos.correo.trim()) {
     errores.correo = "Correo obligatorio";
   }
-  if (datos.correo.trim() && !correoConDominioPermitido(datos.correo)) {
-    errores.correo =
-      "Usa un correo @duocuc.cl, @duoc.cl, @profesor.duoc.cl o @gmail.com";
+  // Checkout: respeta el email del usuario autenticado, incluso el cliente demo.
+  if (datos.correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.correo.trim())) {
+    errores.correo = "Ingresa un correo electrónico válido";
   }
 
   if (datos.entrega === "Despacho a domicilio") {
@@ -53,7 +53,7 @@ export function validarContacto(datos) {
   }
   if (datos.email.trim() && !correoConDominioPermitido(datos.email)) {
     errores.email =
-      "Usa un correo @duocuc.cl, @duoc.cl, @profesor.duoc.cl o @gmail.com";
+      "Ingresa un correo electrónico válido";
   }
 
   if (!datos.asunto) {
@@ -81,7 +81,7 @@ export function validarLogin(datos, encontrado) {
   }
   if (correo && !correoConDominioPermitido(correo)) {
     errores.correo =
-      "Solo se acepta @duocuc.cl, @duoc.cl, @profesor.duoc.cl o @gmail.com";
+      "Ingresa un correo electrónico válido";
   }
   if (correoConDominioPermitido(correo) && !encontrado) {
     errores.correo = "No existe una cuenta con ese correo";
@@ -112,7 +112,7 @@ export function validarRegistro(datos, registrados) {
   }
   if (correo && !correoConDominioPermitido(correo)) {
     errores.correo =
-      "Solo se acepta @duocuc.cl, @duoc.cl, @profesor.duoc.cl o @gmail.com";
+      "Ingresa un correo electrónico válido";
   }
   if (correo && correoConDominioPermitido(correo) && existe) {
     errores.correo = "Ya existe una cuenta con ese correo";
@@ -191,7 +191,7 @@ export function validarUsuario(datos, usuarios, idActual) {
   }
   if (correo && !correoConDominioPermitido(correo)) {
     errores.correo =
-      "Usa un correo @duocuc.cl, @duoc.cl, @profesor.duoc.cl o @gmail.com";
+      "Ingresa un correo electrónico válido";
   }
   if (
     correoConDominioPermitido(correo) &&

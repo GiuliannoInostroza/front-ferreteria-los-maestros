@@ -17,3 +17,7 @@ export const crearPedido = datos => request("/pedidos", {
 export const actualizarPedido = (id, datos) => request(`/pedidos/${id}`, {
   method: "PUT", body: JSON.stringify(datos)
 });
+
+// Detalles de todos los pedidos para los reportes del administrador.
+export const listarDetallesReporte = () =>
+  request("/pedidos/reportes/detalles");

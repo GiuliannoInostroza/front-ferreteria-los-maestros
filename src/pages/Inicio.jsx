@@ -1,11 +1,33 @@
-import { Col, Container, Row } from "react-bootstrap";
+import { useEffect, useState } from "react";
+import { Alert, Col, Container, Row, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
 import TarjetaProducto from "../components/TarjetaProducto";
-import { leerProductos } from "../utils/persistencia";
+import { cargarCatalogo } from "../services/catalogoService";
 
 function Inicio() {
-  const destacados = leerProductos().filter((producto) => producto.destacado);
+  const [productos, setProductos] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    async function cargar() {
+      try {
+        setError("");
+        const catalogo = await cargarCatalogo();
+        setProductos(catalogo.productos);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargar();
+  }, []);
+
+  if (cargando) return <Spinner aria-label="Cargando productos" />;
+  if (error) return <Alert variant="danger">{error}</Alert>;
+
+  const destacados = productos.filter((producto) => producto.destacado);
 
   return (
     <Container className="py-5">

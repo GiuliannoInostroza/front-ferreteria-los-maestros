@@ -1,8 +1,9 @@
 import { correoConDominioPermitido } from "./correo";
 
 describe("correoConDominioPermitido", () => {
-  it("acepta un dominio permitido y rechaza uno no permitido", () => {
+  it("acepta proveedores válidos y rechaza formatos inválidos", () => {
     expect(correoConDominioPermitido("alumno@duocuc.cl")).toBe(true);
-    expect(correoConDominioPermitido("alumno@hotmail.com")).toBe(false);
+    expect(correoConDominioPermitido("cliente@hotmail.com")).toBe(true);
+    expect(correoConDominioPermitido("correo-invalido")).toBe(false);
   });
 });

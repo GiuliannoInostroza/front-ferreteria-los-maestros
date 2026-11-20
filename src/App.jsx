@@ -23,7 +23,12 @@ import AdminProductos from "./pages/admin/AdminProductos";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import GestionPedidos from "./pages/admin/GestionPedidos";
 import MisPedidos from "./pages/MisPedidos";
+import MiCuenta from "./pages/MiCuenta";
+import AdminCuentas from "./pages/admin/AdminCuentas";
+import AdminOfertas from "./pages/admin/AdminOfertas";
+import AdminAlertas from "./pages/admin/AdminAlertas";
 import NoEncontrada from "./pages/NoEncontrada";
+import AdminReportes from "./pages/admin/AdminReportes";
 
 import {
   agregarProducto,
@@ -32,7 +37,7 @@ import {
   quitarProducto,
 } from "./utils/carrito";
 import { guardarCarrito, leerCarrito } from "./utils/persistencia";
-import { puedeAdministrar } from "./utils/sesion";
+import { esAdministrador, puedeAdministrar } from "./utils/sesion";
 import UsuarioForm from "./pages/admin/UsuarioForm";
 
 function App() {
@@ -74,6 +79,7 @@ function App() {
 
       <div className="flex-grow-1">
         <Routes>
+          <Route path="/contacto" element={<Contacto />} />
           <Route
             path="/login"
             element={
@@ -85,6 +91,8 @@ function App() {
             }
           />
           <Route path="/registro" element={<Registro />} />
+          <Route path="/blogs" element={<Blogs />} />
+          <Route path="/blogs/:id" element={<BlogDetalle />} />
           <Route element={<RutaProtegida />}>
             <Route path="/" element={<Inicio />} />
             <Route
@@ -116,6 +124,7 @@ function App() {
               }
             />
             <Route path="/mis-pedidos" element={<MisPedidos />} />
+            <Route path="/mi-cuenta" element={<MiCuenta />} />
             <Route
               path="/categorias"
               element={<Categorias onAgregar={agregarAlCarrito} />}
@@ -125,13 +134,12 @@ function App() {
               element={<Ofertas onAgregar={agregarAlCarrito} />}
             />
             <Route path="/nosotros" element={<Nosotros />} />
-            <Route path="/blogs" element={<Blogs />} />
-            <Route path="/blogs/:id" element={<BlogDetalle />} />
-            <Route path="/contacto" element={<Contacto />} />
             <Route
               path="/admin/productos"
               element={
-                puedeAdministrar(usuario) ? <AdminProductos /> : <SinAcceso />
+                puedeAdministrar(usuario) ? (
+                  <AdminProductos puedeEliminar={esAdministrador(usuario)} />
+                ) : <SinAcceso />
               }
             />
             <Route
@@ -141,9 +149,16 @@ function App() {
               }
             />
             <Route element={<RutaProtegida rol="Administrador" />}>
+              <Route path="/admin/reportes" element={<AdminReportes />} />
               <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+              <Route path="/admin/cuentas" element={<AdminCuentas />} />
+              <Route path="/admin/ofertas" element={<AdminOfertas />} />
+              <Route path="/admin/alertas" element={<AdminAlertas />} />
               <Route path="/admin/usuarios/nuevo" element={<UsuarioForm />} />
-              <Route path="/admin/usuarios/:id/editar" element={<UsuarioForm />} />
+              <Route
+                path="/admin/usuarios/:id/editar"
+                element={<UsuarioForm />}
+              />
             </Route>
             <Route path="*" element={<NoEncontrada />} />
           </Route>

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Col, Container, Form, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { guardarProductos, leerProductos } from "../utils/persistencia";
 
 import CompraExitosa from "../components/CompraExitosa";
+import { cargarCatalogo, descontarStock } from "../services/catalogoService";
 import { crearPedido } from "../services/pedidoService";
+import { miCuenta, cargarAMiCuenta } from "../services/cuentaService";
 import CompraFallida from "../components/CompraFallida";
 import {
   actualizarConCatalogo,
@@ -13,31 +14,17 @@ import {
 } from "../utils/carrito";
 import { formatearPrecio } from "../utils/precio";
 import { hayErrores, validarCheckout } from "../utils/validaciones";
+import MapaCobertura from "../components/MapaCobertura";
 
 const inicial = {
   nombre: "",
   correo: "",
   entrega: "Retiro en tienda",
   direccion: "",
+  comuna: "",
   medioPago: "Pago en tienda",
 };
 
-function descontarStock(carrito) {
-  const productosActuales = leerProductos();
-
-  const productosActualizados = productosActuales.map((producto) => {
-    const comprado = carrito.find((item) => item.codigo === producto.codigo);
-
-    if (!comprado) return producto;
-
-    return {
-      ...producto,
-      stock: producto.stock - comprado.cantidad,
-    };
-  });
-
-  guardarProductos(productosActualizados);
-}
 function Checkout({ carrito, usuario, onVaciar }) {
   const [datos, setDatos] = useState(
     usuario
@@ -47,34 +34,98 @@ function Checkout({ carrito, usuario, onVaciar }) {
   const [errores, setErrores] = useState({});
   const [resultado, setResultado] = useState("");
   const [pedido, setPedido] = useState(null);
+  // INTEGRACION_CREDITO_FL_MAESTROS
+  const [cuentaCredito, setCuentaCredito] = useState(null);
+  const [enviando, setEnviando] = useState(false);
+  const [errorCompra, setErrorCompra] = useState("");
+  const [pedidoParcial, setPedidoParcial] = useState(null);
+  const [puntoEnCobertura, setPuntoEnCobertura] = useState(null);
+  const [catalogo, setCatalogo] = useState(null);
 
-  const vigente = actualizarConCatalogo(carrito, leerProductos());
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const actual = await cargarCatalogo();
+        setCatalogo(actual.productos);
+      } catch {
+        setCatalogo(null);
+      }
+    }
+    cargar();
+  }, []);
+
+  useEffect(() => {
+    let vigente = true;
+    miCuenta()
+      .then((cuenta) => {
+        if (vigente && cuenta?.activa) setCuentaCredito(cuenta);
+      })
+      .catch(() => {
+        if (vigente) setCuentaCredito(null);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
+  const vigente = catalogo ? actualizarConCatalogo(carrito, catalogo) : carrito;
 
   function cambiar(evento) {
     const { name, value } = evento.target;
     setDatos({ ...datos, [name]: value });
+    if (name === "direccion" || name === "comuna" || name === "entrega") {
+      setPuntoEnCobertura(null);
+    }
   }
 
   async function enviar(evento) {
     evento.preventDefault();
+    if (enviando || pedidoParcial) return;
+    setErrorCompra("");
 
     const nuevosErrores = validarCheckout(datos);
+    if (datos.entrega === "Despacho a domicilio") {
+      if (datos.comuna !== "La Serena") {
+        nuevosErrores.comuna = "Solo realizamos despachos en La Serena";
+      }
+      if (datos.entrega === "Despacho a domicilio") {
+        if (puntoEnCobertura !== true) {
+          nuevosErrores.cobertura =
+            "Selecciona un punto dentro de la zona de despacho";
+        }
+      }
+    }
 
     setErrores(nuevosErrores);
     if (hayErrores(nuevosErrores)) return;
 
-    if (hayProductoSinStock(vigente)) {
-      setResultado("fallida");
-      return;
-    }
-
+    setEnviando(true);
     try {
+      const actual = await cargarCatalogo();
+      const items = actualizarConCatalogo(carrito, actual.productos);
+
+      if (hayProductoSinStock(items)) {
+        setResultado("fallida");
+        return;
+      }
+
+      if (datos.medioPago === "Cuenta corriente") {
+        const cuentaActual = await miCuenta();
+        const disponible = cuentaActual.limite - cuentaActual.saldo;
+        if (!cuentaActual.activa || disponible < calcularTotal(items)) {
+          setErrorCompra(
+            "La cuenta está inactiva o no tiene crédito suficiente. No se creó ningún pedido.",
+          );
+          return;
+        }
+      }
+
       const creado = await crearPedido({
         tipoEntrega: datos.entrega,
         direccionDespacho:
           datos.entrega === "Despacho a domicilio" ? datos.direccion : "",
         medioPago: datos.medioPago,
-        detalles: vigente.map((item) => ({
+        detalles: items.map((item) => ({
           codigoProducto: item.codigo,
           nombreProducto: item.nombre,
           cantidad: item.cantidad,
@@ -86,16 +137,43 @@ function Checkout({ carrito, usuario, onVaciar }) {
         ...datos,
         numero: creado.id,
         direccion: creado.direccionDespacho,
-        productos: vigente,
+        productos: items,
         total: creado.total,
       });
 
-      descontarStock(vigente);
+      // El pedido se creó. Si una operación posterior falla, NO se debe reintentar
+      // el checkout porque crearía un segundo pedido (son microservicios separados).
+      try {
+        await descontarStock(
+          items.map((item) => ({
+            productoId: item.id,
+            cantidad: item.cantidad,
+          })),
+        );
+        if (datos.medioPago === "Cuenta corriente") {
+          await cargarAMiCuenta({
+            monto: creado.total,
+            descripcion: `Compra pedido #${creado.id}`,
+            pedidoId: creado.id,
+          });
+        }
+      } catch (error) {
+        setPedidoParcial(creado.id);
+        setErrorCompra(
+          `El pedido #${creado.id} fue creado, pero falló una operación posterior (stock o crédito). NO repitas la compra. Consulta Mis pedidos y avisa al administrador. Detalle: ${error.message}`,
+        );
+        return;
+      }
 
       setResultado("exitosa");
       onVaciar();
-    } catch {
-      setResultado("fallida");
+    } catch (error) {
+      setErrorCompra(
+        error?.message ||
+          "No se pudo procesar la compra. Comprueba Mis pedidos antes de reintentar.",
+      );
+    } finally {
+      setEnviando(false);
     }
   }
 
@@ -124,6 +202,17 @@ function Checkout({ carrito, usuario, onVaciar }) {
       <Row className="g-4">
         <Col xs={12} lg={7}>
           <Form onSubmit={enviar} noValidate>
+            {errorCompra && (
+              <div className="alert alert-danger" role="alert">
+                {errorCompra}
+              </div>
+            )}
+            {pedidoParcial && (
+              <p className="alert alert-warning">
+                El pedido #{pedidoParcial} ya existe. No lo envíes otra vez.{" "}
+                <Link to="/mis-pedidos">Ver mis pedidos</Link>.
+              </p>
+            )}
             <Form.Group className="mb-3" controlId="nombre">
               <Form.Label>Nombre</Form.Label>
               <Form.Control
@@ -143,7 +232,7 @@ function Checkout({ carrito, usuario, onVaciar }) {
                 type="email"
                 name="correo"
                 value={datos.correo}
-                onChange={cambiar}
+                readOnly
                 isInvalid={Boolean(errores.correo)}
               />
               <Form.Control.Feedback type="invalid">
@@ -166,18 +255,65 @@ function Checkout({ carrito, usuario, onVaciar }) {
             </Form.Group>
 
             {datos.entrega === "Despacho a domicilio" && (
-              <Form.Group className="mb-3" controlId="direccion">
-                <Form.Label>Dirección</Form.Label>
-                <Form.Control
-                  name="direccion"
-                  value={datos.direccion}
-                  onChange={cambiar}
-                  isInvalid={Boolean(errores.direccion)}
-                />
-                <Form.Control.Feedback type="invalid">
-                  {errores.direccion}
-                </Form.Control.Feedback>
-              </Form.Group>
+              <>
+                <Form.Group className="mb-3" controlId="direccion">
+                  <Form.Label>Dirección</Form.Label>
+                  <Form.Control
+                    name="direccion"
+                    value={datos.direccion}
+                    onChange={cambiar}
+                    isInvalid={Boolean(errores.direccion)}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errores.direccion}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="comuna">
+                  <Form.Label>Comuna</Form.Label>
+
+                  <Form.Select
+                    name="comuna"
+                    value={datos.comuna}
+                    onChange={cambiar}
+                    isInvalid={Boolean(errores.comuna)}
+                  >
+                    <option value="">Selecciona una comuna</option>
+                    <option value="La Serena">La Serena</option>
+                  </Form.Select>
+
+                  <Form.Control.Feedback type="invalid">
+                    {errores.comuna}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <div className="mb-3">
+                  <h2 className="h5">Zona de despacho</h2>
+
+                  <p>
+                    Selecciona en el mapa el punto correspondiente a tu
+                    dirección de entrega.
+                  </p>
+
+                  <MapaCobertura onVerificar={setPuntoEnCobertura} />
+
+                  {puntoEnCobertura === true && (
+                    <p className="text-success mt-2">
+                      El punto está dentro de la cobertura.
+                    </p>
+                  )}
+
+                  {puntoEnCobertura === false && (
+                    <p className="text-danger mt-2">
+                      El punto está fuera de la cobertura.
+                    </p>
+                  )}
+
+                  {errores.cobertura && (
+                    <p className="text-danger">{errores.cobertura}</p>
+                  )}
+                </div>
+              </>
             )}
 
             <Form.Group className="mb-3" controlId="medioPago">
@@ -191,11 +327,22 @@ function Checkout({ carrito, usuario, onVaciar }) {
               >
                 <option>Pago en tienda</option>
                 <option>Transferencia</option>
+                {cuentaCredito?.activa && <option>Cuenta corriente</option>}
               </select>
+              {datos.medioPago === "Cuenta corriente" && cuentaCredito && (
+                <p className="mt-2 text-secondary">
+                  Crédito disponible:{" "}
+                  {formatearPrecio(cuentaCredito.limite - cuentaCredito.saldo)}
+                </p>
+              )}
             </Form.Group>
 
-            <button type="submit" className="btn btn-warning">
-              Confirmar compra
+            <button
+              type="submit"
+              className="btn btn-warning"
+              disabled={enviando || Boolean(pedidoParcial)}
+            >
+              {enviando ? "Procesando..." : "Confirmar compra"}
             </button>
           </Form>
         </Col>

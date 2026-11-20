@@ -56,7 +56,7 @@ function CompraExitosa({ pedido }) {
         </div>
 
         <p className="resumen-total mb-0">
-          Total pagado: {formatearPrecio(pedido.total)}
+          Total de la compra: {formatearPrecio(pedido.total)}
         </p>
       </section>
 
