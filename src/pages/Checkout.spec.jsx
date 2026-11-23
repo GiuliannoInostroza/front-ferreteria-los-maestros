@@ -17,6 +17,8 @@ describe("Checkout", () => {
     },
   ];
 
+  const cliente = { nombre: "Giulianno", correo: "giu@duocuc.cl", rol: "Cliente" };
+
   const respuestaCatalogo = {
     productos: [
       {
@@ -36,7 +38,7 @@ describe("Checkout", () => {
     direccionDespacho: "Av. Francisco de Aguirre 1234",
   };
 
-  it("muestra errores con el formulario vacío y confirma la compra al corregirlos", async () => {
+  it("pide la comuna para despacho y confirma la compra con retiro en tienda", async () => {
     const espia = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       status: 201,
@@ -46,21 +48,16 @@ describe("Checkout", () => {
     const onVaciar = vi.fn();
     render(
       <BrowserRouter>
-        <Checkout carrito={carrito} onVaciar={onVaciar} />
+        <Checkout carrito={carrito} usuario={cliente} onVaciar={onVaciar} />
       </BrowserRouter>
     );
 
-    await usuario.click(screen.getByRole("button", { name: /confirmar compra/i }));
-    expect(screen.getByText("Nombre obligatorio")).toBeInTheDocument();
-    expect(screen.getByText("Correo obligatorio")).toBeInTheDocument();
-
-    await usuario.type(screen.getByLabelText("Nombre"), "Giulianno");
-    await usuario.type(screen.getByLabelText("Correo"), "giu@duocuc.cl");
     await usuario.selectOptions(screen.getByLabelText("Entrega"), "Despacho a domicilio");
     await usuario.click(screen.getByRole("button", { name: /confirmar compra/i }));
-    expect(screen.getByText("Dirección obligatoria")).toBeInTheDocument();
+    expect(screen.getByText("Solo realizamos despachos en La Serena")).toBeInTheDocument();
+    expect(onVaciar).not.toHaveBeenCalled();
 
-    await usuario.type(screen.getByLabelText("Dirección"), "Av. Francisco de Aguirre 1234");
+    await usuario.selectOptions(screen.getByLabelText("Entrega"), "Retiro en tienda");
     await usuario.click(screen.getByRole("button", { name: /confirmar compra/i }));
 
     expect(await screen.findByRole("heading", { name: /compra exitosa/i })).toBeInTheDocument();
@@ -73,14 +70,13 @@ describe("Checkout", () => {
         headers: { "Content-Type": "application/json" },
       }
     );
-    expect(screen.getByText(/Av. Francisco de Aguirre 1234/)).toBeInTheDocument();
     expect(espia).toHaveBeenCalledWith(
       `${import.meta.env.VITE_PEDIDOS_API_URL}/pedidos`,
       {
         method: "POST",
         body: JSON.stringify({
-          tipoEntrega: "Despacho a domicilio",
-          direccionDespacho: "Av. Francisco de Aguirre 1234",
+          tipoEntrega: "Retiro en tienda",
+          direccionDespacho: "",
           medioPago: "Pago en tienda",
           detalles: [
             {
@@ -106,7 +102,7 @@ describe("Checkout", () => {
     const onVaciar = vi.fn();
     render(
       <BrowserRouter>
-        <Checkout carrito={carrito} onVaciar={onVaciar} />
+        <Checkout carrito={carrito} usuario={cliente} onVaciar={onVaciar} />
       </BrowserRouter>
     );
 
@@ -129,12 +125,10 @@ describe("Checkout", () => {
     const sinStock = [{ ...carrito[0], cantidad: 81 }];
     render(
       <BrowserRouter>
-        <Checkout carrito={sinStock} onVaciar={vi.fn()} />
+        <Checkout carrito={sinStock} usuario={cliente} onVaciar={vi.fn()} />
       </BrowserRouter>
     );
 
-    await usuario.type(screen.getByLabelText("Nombre"), "Giulianno");
-    await usuario.type(screen.getByLabelText("Correo"), "giu@duocuc.cl");
     await usuario.click(screen.getByRole("button", { name: /confirmar compra/i }));
     expect(
       await screen.findByRole("heading", { name: /no se pudo realizar el pago/i })
