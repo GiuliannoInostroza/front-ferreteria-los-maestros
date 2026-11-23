@@ -12,28 +12,17 @@ function BlogDetalle() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let activo = true;
-
     async function cargarBlog() {
-      setCargando(true);
-      setError("");
-      setBlog(null);
-
       try {
-        const datos = await buscarBlog(id);
-        if (activo) setBlog(datos);
+        setError("");
+        setBlog(await buscarBlog(id));
       } catch (err) {
-        if (activo) setError(err.message);
+        setError(err.message);
       } finally {
-        if (activo) setCargando(false);
+        setCargando(false);
       }
     }
-
     cargarBlog();
-
-    return () => {
-      activo = false;
-    };
   }, [id]);
 
   if (cargando) {

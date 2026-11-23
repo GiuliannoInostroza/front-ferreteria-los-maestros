@@ -96,11 +96,11 @@ function GestionPedidos() {
                       className="btn btn-outline-warning btn-sm"
                       onClick={() =>
                         setPedidoMapa((actual) =>
-                          actual?.id === pedido.id ? null : pedido,
+                          actual && actual.id === pedido.id ? null : pedido,
                         )
                       }
                     >
-                      {pedidoMapa?.id === pedido.id
+                      {pedidoMapa && pedidoMapa.id === pedido.id
                         ? "Ocultar mapa"
                         : "Ver mapa"}
                     </button>

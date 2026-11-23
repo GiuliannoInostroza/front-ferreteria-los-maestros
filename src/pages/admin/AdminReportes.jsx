@@ -3,6 +3,16 @@ import { Alert, Col, Container, Row, Spinner } from "react-bootstrap";
 import { listarPedidos, listarDetallesReporte } from "../../services/pedidoService";
 import { formatearMonto } from "../../utils/precio";
 
+const estados = [
+  "Pendiente",
+  "Confirmado",
+  "En preparación",
+  "Listo para retiro",
+  "En despacho",
+  "Entregado",
+  "Cancelado",
+];
+
 function AdminReportes() {
   const [pedidos, setPedidos] = useState([]);
   const [detalles, setDetalles] = useState([]);
@@ -13,36 +23,23 @@ function AdminReportes() {
   const [hasta, setHasta] = useState("");
 
   useEffect(() => {
-    let activo = true;
-
     async function cargar() {
       try {
-        const datos = await listarPedidos();
-        const productosPedido = await listarDetallesReporte();
-        if (activo) {
-          setPedidos(datos);
-          setDetalles(productosPedido);
-        }
+        setPedidos(await listarPedidos());
+        setDetalles(await listarDetallesReporte());
       } catch (e) {
-        if (activo) setError(e.message);
+        setError(e.message);
       } finally {
-        if (activo) setCargando(false);
+        setCargando(false);
       }
     }
-
     cargar();
-    return () => {
-      activo = false;
-    };
   }, []);
 
   const pedidosFiltrados = pedidos.filter((pedido) => {
     const cumpleEstado = estado === "Todos" || pedido.estado === estado;
-
-    const cumpleDesde = !desde || (pedido.fecha && pedido.fecha >= desde);
-
-    const cumpleHasta = !hasta || (pedido.fecha && pedido.fecha <= hasta);
-
+    const cumpleDesde = !desde || pedido.fecha >= desde;
+    const cumpleHasta = !hasta || pedido.fecha <= hasta;
     return cumpleEstado && cumpleDesde && cumpleHasta;
   });
 
@@ -54,47 +51,52 @@ function AdminReportes() {
     (pedido) => pedido.estado === "Entregado",
   ).length;
 
-  const montoTotal = pedidosFiltrados
-    .filter((pedido) => pedido.estado !== "Cancelado")
-    .reduce((suma, pedido) => suma + Number(pedido.total || 0), 0);
+  const pedidosValidos = pedidosFiltrados.filter(
+    (pedido) => pedido.estado !== "Cancelado",
+  );
 
-  const estados = [...new Set(pedidos.map((pedido) => pedido.estado))]
-    .filter(Boolean)
-    .sort();
-
-  // Contamos los pedidos realizados por cada cliente.
-  const resumenClientes = {};
-  for (const pedido of pedidosFiltrados) {
-    if (pedido.estado === "Cancelado" || !pedido.correoCliente) continue;
-
-    const correo = pedido.correoCliente;
-    if (!resumenClientes[correo]) {
-      resumenClientes[correo] = { correo, cantidad: 0, total: 0 };
-    }
-    resumenClientes[correo].cantidad += 1;
-    resumenClientes[correo].total += Number(pedido.total || 0);
+  let montoTotal = 0;
+  for (const pedido of pedidosValidos) {
+    montoTotal += Number(pedido.total);
   }
-  const clientesFrecuentes = Object.values(resumenClientes)
+
+  const clientes = [];
+  for (const pedido of pedidosValidos) {
+    const cliente = clientes.find((item) => item.correo === pedido.correoCliente);
+    if (cliente) {
+      cliente.cantidad += 1;
+      cliente.total += Number(pedido.total);
+    } else {
+      clientes.push({
+        correo: pedido.correoCliente,
+        cantidad: 1,
+        total: Number(pedido.total),
+      });
+    }
+  }
+  const clientesFrecuentes = clientes
     .sort((a, b) => b.cantidad - a.cantidad)
     .slice(0, 10);
 
-  // Contamos las unidades vendidas por producto, sin incluir pedidos cancelados.
-  const resumenProductos = {};
+  const productos = [];
   for (const detalle of detalles) {
-    const pedido = pedidosFiltrados.find((p) => p.id === detalle.pedidoId);
-    if (!pedido || pedido.estado === "Cancelado") continue;
-
-    const codigo = detalle.codigoProducto;
-    if (!resumenProductos[codigo]) {
-      resumenProductos[codigo] = {
-        codigo,
-        nombre: detalle.nombreProducto,
-        cantidad: 0,
-      };
+    const pedido = pedidosValidos.find((item) => item.id === detalle.pedidoId);
+    if (pedido) {
+      const producto = productos.find(
+        (item) => item.codigo === detalle.codigoProducto,
+      );
+      if (producto) {
+        producto.cantidad += detalle.cantidad;
+      } else {
+        productos.push({
+          codigo: detalle.codigoProducto,
+          nombre: detalle.nombreProducto,
+          cantidad: detalle.cantidad,
+        });
+      }
     }
-    resumenProductos[codigo].cantidad += Number(detalle.cantidad || 0);
   }
-  const productosMasVendidos = Object.values(resumenProductos)
+  const productosMasVendidos = productos
     .sort((a, b) => b.cantidad - a.cantidad)
     .slice(0, 10);
 

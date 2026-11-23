@@ -16,7 +16,6 @@ export function validarCheckout(datos) {
   if (!datos.correo.trim()) {
     errores.correo = "Correo obligatorio";
   }
-  // Checkout: respeta el email del usuario autenticado, incluso el cliente demo.
   if (datos.correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.correo.trim())) {
     errores.correo = "Ingresa un correo electrónico válido";
   }

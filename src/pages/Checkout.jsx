@@ -34,7 +34,6 @@ function Checkout({ carrito, usuario, onVaciar }) {
   const [errores, setErrores] = useState({});
   const [resultado, setResultado] = useState("");
   const [pedido, setPedido] = useState(null);
-  // INTEGRACION_CREDITO_FL_MAESTROS
   const [cuentaCredito, setCuentaCredito] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const [errorCompra, setErrorCompra] = useState("");
@@ -55,17 +54,15 @@ function Checkout({ carrito, usuario, onVaciar }) {
   }, []);
 
   useEffect(() => {
-    let vigente = true;
-    miCuenta()
-      .then((cuenta) => {
-        if (vigente && cuenta?.activa) setCuentaCredito(cuenta);
-      })
-      .catch(() => {
-        if (vigente) setCuentaCredito(null);
-      });
-    return () => {
-      vigente = false;
-    };
+    async function cargarCuenta() {
+      try {
+        const cuenta = await miCuenta();
+        if (cuenta && cuenta.activa) setCuentaCredito(cuenta);
+      } catch {
+        setCuentaCredito(null);
+      }
+    }
+    cargarCuenta();
   }, []);
 
   const vigente = catalogo ? actualizarConCatalogo(carrito, catalogo) : carrito;
@@ -141,8 +138,6 @@ function Checkout({ carrito, usuario, onVaciar }) {
         total: creado.total,
       });
 
-      // El pedido se creó. Si una operación posterior falla, NO se debe reintentar
-      // el checkout porque crearía un segundo pedido (son microservicios separados).
       try {
         await descontarStock(
           items.map((item) => ({
@@ -169,7 +164,7 @@ function Checkout({ carrito, usuario, onVaciar }) {
       onVaciar();
     } catch (error) {
       setErrorCompra(
-        error?.message ||
+        error.message ||
           "No se pudo procesar la compra. Comprueba Mis pedidos antes de reintentar.",
       );
     } finally {
@@ -327,7 +322,7 @@ function Checkout({ carrito, usuario, onVaciar }) {
               >
                 <option>Pago en tienda</option>
                 <option>Transferencia</option>
-                {cuentaCredito?.activa && <option>Cuenta corriente</option>}
+                {cuentaCredito && cuentaCredito.activa && <option>Cuenta corriente</option>}
               </select>
               {datos.medioPago === "Cuenta corriente" && cuentaCredito && (
                 <p className="mt-2 text-secondary">
