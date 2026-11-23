@@ -25,3 +25,12 @@ export async function registrar(datos) {
   }
   return response.json();
 }
+
+export async function renovar() {
+  const response = await fetch(`${AUTH_URL}/auth/renovar`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+  });
+  if (!response.ok) throw new Error("La sesión venció");
+  return response.json();
+}

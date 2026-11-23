@@ -1,3 +1,5 @@
+import { avisarSiVencio } from "../utils/token";
+
 const PEDIDOS_URL = import.meta.env.VITE_PEDIDOS_API_URL;
 
 async function request(ruta, opciones = {}) {
@@ -5,6 +7,7 @@ async function request(ruta, opciones = {}) {
   const headers = { "Content-Type": "application/json", ...opciones.headers };
   if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(`${PEDIDOS_URL}${ruta}`, { ...opciones, headers });
+  avisarSiVencio(response);
   if (!response.ok) throw new Error(`Solicitud rechazada: ${response.status}`);
   return response.status === 204 ? null : response.json();
 }

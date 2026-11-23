@@ -2,7 +2,7 @@
 
 Tienda online desarrollada para Ferretería Los Maestros.
 
-Proyecto del ramo Desarrollo FullStack II (DSY1104) de Duoc UC. En la Evaluación Parcial 2 el sitio fue migrado a React y se incorporaron componentes reutilizables, navegación, persistencia local, administración y pruebas unitarias. En la Evaluación Parcial 3 se conectó con los microservicios Spring Boot del backend: inicio de sesión con JWT, administración de usuarios y pedidos.
+Proyecto del ramo Desarrollo FullStack II (DSY1104) de Duoc UC. En la Evaluación Parcial 2 el sitio fue migrado a React y se incorporaron componentes reutilizables, navegación, persistencia local, administración y pruebas unitarias. En la Evaluación Parcial 3 se conectó con los cinco microservicios Spring Boot del backend: inicio de sesión con JWT y renovación del token, catálogo, pedidos, cuentas corrientes y contenido.
 
 ## Equipo
 
@@ -91,7 +91,9 @@ Las pruebas utilizan `vi.fn`, `vi.spyOn`, `mockRestore` y `mockResolvedValue` se
 
 Como pide la Forma E, todas las pantallas exigen sesión, salvo `/login` y `/registro`: sin sesión, `RutaProtegida` redirige al inicio de sesión.
 
-El inicio de sesión se hace contra `ms-usuarios`, que valida la contraseña (guardada con BCrypt) y entrega un JWT. React guarda el token y el usuario en `sessionStorage`: la sesión se mantiene al recargar y se borra al cerrar la pestaña o con "Cerrar sesión". Cada servicio envía el token en el encabezado `Authorization: Bearer`. El token dura 1 hora; al vencer, hay que volver a iniciar sesión.
+El inicio de sesión se hace contra `ms-usuarios`, que valida la contraseña (guardada con BCrypt) y entrega un JWT. React guarda el token y el usuario en `sessionStorage`: la sesión se mantiene al recargar y se borra al cerrar la pestaña o con "Cerrar sesión". Cada servicio envía el token en el encabezado `Authorization: Bearer`.
+
+La sesión vive en `AuthContext` (`src/context/AuthContext.jsx`), que expone `usuario`, `login` y `logout` y la restaura desde `sessionStorage` al recargar. El token dura 1 hora: cinco minutos antes de vencer, `AuthContext` llama a `POST /api/auth/renovar` y guarda el token nuevo. Si la renovación falla, si el token ya venció al recargar o si cualquier servicio responde 401, la sesión se cierra y `RutaProtegida` lleva al inicio de sesión.
 
 La cuenta de administrador inicial la crea `ms-usuarios` al arrancar con `ADMIN_CORREO` y `ADMIN_PASSWORD`. Las cuentas nuevas se crean en `/registro` (como Cliente) o desde la administración de usuarios.
 
@@ -169,10 +171,10 @@ El menú cambia a navegación colapsada bajo el breakpoint `xl` de Bootstrap y s
 
 La versión final está publicada en AWS EC2 utilizando Nginx:
 
-http://54.88.103.128
+http://54.91.218.47 (la IP pública cambia cada vez que se reinicia el laboratorio de AWS)
 
 ## Alcance
 
-Los usuarios y los pedidos se guardan en el backend (MySQL). El catálogo, las ofertas, los blogs y el stock siguen en datos locales hasta que se conecten `ms-catalogo` y `ms-contenido`.
+Los usuarios, el catálogo, las ofertas, el stock, los pedidos, las cuentas corrientes, los blogs y los mensajes de contacto se guardan en los cinco microservicios del backend (MariaDB). En el navegador solo queda el carrito (`localStorage`) y la sesión (`sessionStorage`).
 
 No se incluyen pagos reales.

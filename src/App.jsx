@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "./context/AuthContext";
 import { Route, Routes } from "react-router-dom";
 
 import Navegacion from "./components/Navegacion";
@@ -42,10 +43,7 @@ import UsuarioForm from "./pages/admin/UsuarioForm";
 
 function App() {
   const [carrito, setCarrito] = useState(() => leerCarrito());
-  const [usuario, setUsuario] = useState(() => {
-    const texto = sessionStorage.getItem("usuario");
-    return texto ? JSON.parse(texto) : null;
-  });
+  const { usuario, login, logout } = useAuth();
 
   useEffect(() => {
     guardarCarrito(carrito);
@@ -67,32 +65,23 @@ function App() {
     setCarrito([]);
   }
 
-  function cerrarSesion() {
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("usuario");
-    setUsuario(null);
-  }
-
   return (
     <div className="min-vh-100 d-flex flex-column">
       <Navegacion unidades={contarUnidades(carrito)} usuario={usuario} />
 
       <div className="flex-grow-1">
         <Routes>
-          <Route path="/contacto" element={<Contacto />} />
           <Route
             path="/login"
             element={
               <Login
                 usuario={usuario}
-                onIngresar={setUsuario}
-                onSalir={cerrarSesion}
+                onIngresar={login}
+                onSalir={logout}
               />
             }
           />
           <Route path="/registro" element={<Registro />} />
-          <Route path="/blogs" element={<Blogs />} />
-          <Route path="/blogs/:id" element={<BlogDetalle />} />
           <Route element={<RutaProtegida />}>
             <Route path="/" element={<Inicio />} />
             <Route
@@ -134,6 +123,9 @@ function App() {
               element={<Ofertas onAgregar={agregarAlCarrito} />}
             />
             <Route path="/nosotros" element={<Nosotros />} />
+            <Route path="/contacto" element={<Contacto />} />
+            <Route path="/blogs" element={<Blogs />} />
+            <Route path="/blogs/:id" element={<BlogDetalle />} />
             <Route
               path="/admin/productos"
               element={
