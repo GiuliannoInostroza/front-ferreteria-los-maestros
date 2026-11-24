@@ -1,7 +1,7 @@
 import { Col, Container, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
-function PiePagina() {
+function PiePagina({ usuario }) {
   return (
     <footer className="bg-dark-subtle text-light py-5">
       <Container>
@@ -14,28 +14,39 @@ function PiePagina() {
             </p>
           </Col>
 
-          <Col xs={6} md={3}>
-            <strong>Tienda</strong>
-            <Link className="d-block text-secondary text-decoration-none" to="/productos">
-              Productos
-            </Link>
-            <Link className="d-block text-secondary text-decoration-none" to="/carrito">
-              Carrito
-            </Link>
-            <Link className="d-block text-secondary text-decoration-none" to="/blogs">
-              Blogs
-            </Link>
-          </Col>
+          {usuario?.rol === "Vendedor" ? (
+            <Col xs={6} md={3}>
+              <strong>Administración</strong>
+              <Link className="d-block text-secondary text-decoration-none" to="/admin/productos">Productos</Link>
+              <Link className="d-block text-secondary text-decoration-none" to="/admin/pedidos">Pedidos</Link>
+              <Link className="d-block text-secondary text-decoration-none" to="/login">Mi sesión</Link>
+            </Col>
+          ) : (
+            <>
+              <Col xs={6} md={3}>
+                <strong>Tienda</strong>
+                <Link className="d-block text-secondary text-decoration-none" to="/productos">
+                  Productos
+                </Link>
+                <Link className="d-block text-secondary text-decoration-none" to="/carrito">
+                  Carrito
+                </Link>
+                <Link className="d-block text-secondary text-decoration-none" to="/blogs">
+                  Blogs
+                </Link>
+              </Col>
 
-          <Col xs={6} md={3}>
-            <strong>Cuenta</strong>
-            <Link className="d-block text-secondary text-decoration-none" to="/login">
-              Iniciar sesión
-            </Link>
-            <Link className="d-block text-secondary text-decoration-none" to="/contacto">
-              Contacto
-            </Link>
-          </Col>
+              <Col xs={6} md={3}>
+                <strong>Cuenta</strong>
+                <Link className="d-block text-secondary text-decoration-none" to="/login">
+                  Iniciar sesión
+                </Link>
+                <Link className="d-block text-secondary text-decoration-none" to="/contacto">
+                  Contacto
+                </Link>
+              </Col>
+            </>
+          )}
         </Row>
       </Container>
     </footer>

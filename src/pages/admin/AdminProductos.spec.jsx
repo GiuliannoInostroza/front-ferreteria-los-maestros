@@ -114,6 +114,27 @@ describe("AdminProductos", () => {
     espia.mockRestore();
   });
 
+  it("permite al vendedor actualizar únicamente el stock", async () => {
+    const espia = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValue(respuesta({ productos: [cemento], categorias, ofertas: [] }));
+    const usuario = userEvent.setup();
+    render(<AdminProductos esAdmin={false} />);
+
+    await usuario.click(await screen.findByRole("button", { name: "Actualizar stock" }));
+    expect(screen.queryByRole("button", { name: /agregar producto/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
+    await usuario.clear(screen.getByLabelText("Stock"));
+    await usuario.type(screen.getByLabelText("Stock"), "90");
+    espia.mockResolvedValue(respuesta({ ...cemento, stock: 90 }));
+    await usuario.click(screen.getByRole("button", { name: "Guardar stock" }));
+    expect(await screen.findByText("Stock actualizado correctamente")).toBeInTheDocument();
+    expect(espia).toHaveBeenCalledWith(
+      `${import.meta.env.VITE_CATALOGO_API_URL}/productos/1/stock`,
+      { method: "PUT", body: JSON.stringify({ stock: 90 }), headers: { "Content-Type": "application/json" } }
+    );
+    espia.mockRestore();
+  });
+
   it("avisa el error cuando la API del catálogo no responde", async () => {
     const espia = vi
       .spyOn(globalThis, "fetch")

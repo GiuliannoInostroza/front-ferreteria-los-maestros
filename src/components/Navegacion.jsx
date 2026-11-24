@@ -4,10 +4,11 @@ import { NavLink } from "react-router-dom";
 import { esAdministrador, puedeAdministrar } from "../utils/sesion";
 
 function Navegacion({ unidades, usuario }) {
+  const esVendedor = usuario?.rol === "Vendedor";
   return (
     <Navbar expand="xl" className="navbar-ferreteria" data-bs-theme="dark">
       <Container>
-        <NavLink className="navbar-brand" to="/">
+        <NavLink className="navbar-brand" to={esVendedor ? "/admin/productos" : "/"}>
           <img src="/assets/img/logo.png" alt="Logo de la ferretería" />
           <span className="brand-text">Ferretería Los Maestros</span>
         </NavLink>
@@ -19,66 +20,71 @@ function Navegacion({ unidades, usuario }) {
 
         <Navbar.Collapse id="menu-principal">
           <Nav className="ms-auto align-items-lg-center">
-            <NavLink className="nav-link" to="/">
-              Inicio
-            </NavLink>
-
-            {puedeAdministrar(usuario) ? (
-              <NavDropdown title="Tienda" id="menu-tienda">
-                <NavDropdown.Item as={NavLink} to="/productos">
-                  Productos
-                </NavDropdown.Item>
-
-                <NavDropdown.Item as={NavLink} to="/categorias">
-                  Categorías
-                </NavDropdown.Item>
-
-                <NavDropdown.Item as={NavLink} to="/ofertas">
-                  Ofertas
-                </NavDropdown.Item>
-              </NavDropdown>
-            ) : (
+            {!esVendedor && (
               <>
-                <NavLink className="nav-link" to="/productos">
-                  Productos
+                <NavLink className="nav-link" to="/">
+                  Inicio
                 </NavLink>
 
-                <NavLink className="nav-link" to="/categorias">
-                  Categorías
+                {puedeAdministrar(usuario) ? (
+                  <NavDropdown title="Tienda" id="menu-tienda">
+                    <NavDropdown.Item as={NavLink} to="/productos">
+                      Productos
+                    </NavDropdown.Item>
+
+                    <NavDropdown.Item as={NavLink} to="/categorias">
+                      Categorías
+                    </NavDropdown.Item>
+
+                    <NavDropdown.Item as={NavLink} to="/ofertas">
+                      Ofertas
+                    </NavDropdown.Item>
+                  </NavDropdown>
+                ) : (
+                  <>
+                    <NavLink className="nav-link" to="/productos">
+                      Productos
+                    </NavLink>
+
+                    <NavLink className="nav-link" to="/categorias">
+                      Categorías
+                    </NavLink>
+
+                    <NavLink className="nav-link" to="/ofertas">
+                      Ofertas
+                    </NavLink>
+                  </>
+                )}
+
+                <NavDropdown title="Información" id="menu-informacion">
+                  <NavDropdown.Item as={NavLink} to="/nosotros">
+                    Nosotros
+                  </NavDropdown.Item>
+                  <NavDropdown.Item as={NavLink} to="/blogs">
+                    Blogs
+                  </NavDropdown.Item>
+                  <NavDropdown.Item as={NavLink} to="/contacto">
+                    Contacto
+                  </NavDropdown.Item>
+                </NavDropdown>
+
+                <NavLink className="nav-link" to="/carrito">
+                  Carrito ({unidades})
                 </NavLink>
 
-                <NavLink className="nav-link" to="/ofertas">
-                  Ofertas
-                </NavLink>
+                {usuario && (
+                  <NavLink className="nav-link" to="/mis-pedidos">
+                    Mis pedidos
+                  </NavLink>
+                )}
+
+                {usuario && (
+                  <NavLink className="nav-link" to="/mi-cuenta">
+                    Mi cuenta corriente
+                  </NavLink>
+                )}
+
               </>
-            )}
-
-            <NavDropdown title="Información" id="menu-informacion">
-              <NavDropdown.Item as={NavLink} to="/nosotros">
-                Nosotros
-              </NavDropdown.Item>
-              <NavDropdown.Item as={NavLink} to="/blogs">
-                Blogs
-              </NavDropdown.Item>
-              <NavDropdown.Item as={NavLink} to="/contacto">
-                Contacto
-              </NavDropdown.Item>
-            </NavDropdown>
-
-            <NavLink className="nav-link" to="/carrito">
-              Carrito ({unidades})
-            </NavLink>
-
-            {usuario && (
-              <NavLink className="nav-link" to="/mis-pedidos">
-                Mis pedidos
-              </NavLink>
-            )}
-
-            {usuario && (
-              <NavLink className="nav-link" to="/mi-cuenta">
-                Mi cuenta corriente
-              </NavLink>
             )}
 
             {puedeAdministrar(usuario) && (

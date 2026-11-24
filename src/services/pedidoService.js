@@ -13,6 +13,7 @@ async function request(ruta, opciones = {}) {
 }
 
 export const listarPedidos = () => request("/pedidos");
+export const listarDetallesPedido = id => request(`/pedidos/${id}/detalles`);
 export const listarMisPedidos = () => request("/pedidos/mios");
 export const crearPedido = datos => request("/pedidos", {
   method: "POST", body: JSON.stringify(datos)

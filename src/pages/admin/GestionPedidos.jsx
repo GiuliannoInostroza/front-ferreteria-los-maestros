@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Container, Spinner } from "react-bootstrap";
 import MapaDespacho from "../../components/MapaDespacho";
-import { actualizarPedido, listarPedidos } from "../../services/pedidoService";
+import { actualizarPedido, listarPedidos, listarDetallesPedido } from "../../services/pedidoService";
 import { formatearPrecio } from "../../utils/precio";
 
 const estados = [
@@ -19,6 +19,10 @@ function GestionPedidos() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [pedidoMapa, setPedidoMapa] = useState(null);
+  const [pedidoDetalle, setPedidoDetalle] = useState(null);
+  const [detalles, setDetalles] = useState([]);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
+  const [errorDetalle, setErrorDetalle] = useState("");
 
   useEffect(() => {
     async function cargar() {
@@ -48,6 +52,20 @@ function GestionPedidos() {
     }
   }
 
+  async function verDetalle(pedido) {
+    setPedidoDetalle(pedido);
+    setDetalles([]);
+    setErrorDetalle("");
+    setCargandoDetalle(true);
+    try {
+      setDetalles(await listarDetallesPedido(pedido.id));
+    } catch (e) {
+      setErrorDetalle(e.message);
+    } finally {
+      setCargandoDetalle(false);
+    }
+  }
+
   if (cargando) return <Spinner aria-label="Cargando pedidos" />;
   if (error) return <Alert variant="danger">{error}</Alert>;
   if (pedidos.length === 0) return <Alert>No hay pedidos.</Alert>;
@@ -66,6 +84,7 @@ function GestionPedidos() {
               <th>Total</th>
               <th>Estado</th>
               <th>Ubicación</th>
+              <th>Detalle</th>
             </tr>
           </thead>
           <tbody>
@@ -108,12 +127,35 @@ function GestionPedidos() {
                     <span className="text-secondary">No aplica</span>
                   )}
                 </td>
+                <td>
+                  <button type="button" className="btn btn-outline-warning btn-sm"
+                    disabled={cargandoDetalle} onClick={() => verDetalle(pedido)}>Ver detalle</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
+      {pedidoDetalle && (
+        <section className="bg-body-tertiary rounded p-3 mt-4">
+          <h2 className="h4">Detalle del pedido N.° {pedidoDetalle.id}</h2>
+          <p>Cliente: {pedidoDetalle.correoCliente} · Pago: {pedidoDetalle.medioPago}</p>
+          {pedidoDetalle.direccionDespacho && <p>Dirección: {pedidoDetalle.direccionDespacho}</p>}
+          {cargandoDetalle && <Spinner aria-label="Cargando detalle" />}
+          {errorDetalle && <Alert variant="danger">{errorDetalle}</Alert>}
+          {!cargandoDetalle && !errorDetalle && (
+            detalles.length ? (
+              <ul>
+                {detalles.map(detalle => (
+                  <li key={detalle.id}>{detalle.nombreProducto} — {detalle.cantidad} x {formatearPrecio(detalle.precioUnitario)}</li>
+                ))}
+              </ul>
+            ) : <p>No hay productos registrados.</p>
+          )}
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setPedidoDetalle(null)}>Cerrar detalle</button>
+        </section>
+      )}
       {pedidoMapa && <MapaDespacho direccion={pedidoMapa.direccionDespacho} />}
     </Container>
   );

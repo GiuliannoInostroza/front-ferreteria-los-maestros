@@ -83,54 +83,56 @@ function App() {
           />
           <Route path="/registro" element={<Registro />} />
           <Route element={<RutaProtegida />}>
-            <Route path="/" element={<Inicio />} />
-            <Route
-              path="/productos"
-              element={<Productos onAgregar={agregarAlCarrito} />}
-            />
-            <Route
-              path="/productos/:codigo"
-              element={<DetalleProducto onAgregar={agregarAlCarrito} />}
-            />
-            <Route
-              path="/carrito"
-              element={
-                <Carrito
-                  carrito={carrito}
-                  onCambiarCantidad={cambiarCantidad}
-                  onQuitar={quitarDelCarrito}
-                />
-              }
-            />
-            <Route
-              path="/checkout"
-              element={
-                <Checkout
-                  carrito={carrito}
-                  usuario={usuario}
-                  onVaciar={vaciarCarrito}
-                />
-              }
-            />
-            <Route path="/mis-pedidos" element={<MisPedidos />} />
-            <Route path="/mi-cuenta" element={<MiCuenta />} />
-            <Route
-              path="/categorias"
-              element={<Categorias onAgregar={agregarAlCarrito} />}
-            />
-            <Route
-              path="/ofertas"
-              element={<Ofertas onAgregar={agregarAlCarrito} />}
-            />
-            <Route path="/nosotros" element={<Nosotros />} />
-            <Route path="/contacto" element={<Contacto />} />
-            <Route path="/blogs" element={<Blogs />} />
-            <Route path="/blogs/:id" element={<BlogDetalle />} />
+            <Route element={<RutaProtegida excluirVendedor />}>
+              <Route path="/" element={<Inicio />} />
+              <Route
+                path="/productos"
+                element={<Productos onAgregar={agregarAlCarrito} />}
+              />
+              <Route
+                path="/productos/:codigo"
+                element={<DetalleProducto onAgregar={agregarAlCarrito} />}
+              />
+              <Route
+                path="/carrito"
+                element={
+                  <Carrito
+                    carrito={carrito}
+                    onCambiarCantidad={cambiarCantidad}
+                    onQuitar={quitarDelCarrito}
+                  />
+                }
+              />
+              <Route
+                path="/checkout"
+                element={
+                  <Checkout
+                    carrito={carrito}
+                    usuario={usuario}
+                    onVaciar={vaciarCarrito}
+                  />
+                }
+              />
+              <Route path="/mis-pedidos" element={<MisPedidos />} />
+              <Route path="/mi-cuenta" element={<MiCuenta />} />
+              <Route
+                path="/categorias"
+                element={<Categorias onAgregar={agregarAlCarrito} />}
+              />
+              <Route
+                path="/ofertas"
+                element={<Ofertas onAgregar={agregarAlCarrito} />}
+              />
+              <Route path="/nosotros" element={<Nosotros />} />
+              <Route path="/contacto" element={<Contacto />} />
+              <Route path="/blogs" element={<Blogs />} />
+              <Route path="/blogs/:id" element={<BlogDetalle />} />
+            </Route>
             <Route
               path="/admin/productos"
               element={
                 puedeAdministrar(usuario) ? (
-                  <AdminProductos puedeEliminar={esAdministrador(usuario)} />
+                  <AdminProductos esAdmin={esAdministrador(usuario)} />
                 ) : <SinAcceso />
               }
             />
@@ -157,7 +159,7 @@ function App() {
         </Routes>
       </div>
 
-      <PiePagina />
+      <PiePagina usuario={usuario} />
     </div>
   );
 }
