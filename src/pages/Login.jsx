@@ -39,7 +39,7 @@ function Login({ usuario, onIngresar, onSalir }) {
       onIngresar(usuarioSesion);
       setMensaje("");
       setDatos(inicial);
-      navigate("/productos");
+      navigate(usuarioSesion.rol === "Vendedor" ? "/admin/productos" : "/productos");
     } catch {
       setError("No fue posible iniciar sesión");
     } finally {
@@ -56,9 +56,11 @@ function Login({ usuario, onIngresar, onSalir }) {
         </p>
 
         <div className="d-flex flex-wrap gap-2">
-          <Link className="btn btn-warning" to="/productos">
-            Ver productos
-          </Link>
+          {usuario.rol !== "Vendedor" && (
+            <Link className="btn btn-warning" to="/productos">
+              Ver productos
+            </Link>
+          )}
 
           {usuario.rol !== "Cliente" && (
             <Link className="btn btn-outline-light" to="/admin/productos">

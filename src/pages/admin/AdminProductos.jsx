@@ -4,6 +4,7 @@ import { Alert, Button, Container, Spinner } from "react-bootstrap";
 import { mensajeEliminado, mensajeGuardado } from "../../utils/mensajes";
 import {
   actualizarProducto,
+  actualizarStock,
   crearProducto,
   eliminarProducto,
   listarCatalogo,
@@ -11,7 +12,7 @@ import {
 import { formatearPrecio } from "../../utils/precio";
 import FormularioProducto from "./FormularioProducto";
 
-function AdminProductos({ puedeEliminar = true }) {
+function AdminProductos({ esAdmin = true }) {
   const [listaProductos, setListaProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -21,6 +22,8 @@ function AdminProductos({ puedeEliminar = true }) {
   const [hayCambios, setHayCambios] = useState(false);
   const [pendiente, setPendiente] = useState(null);
   const [mensaje, setMensaje] = useState("");
+  const [stock, setStock] = useState("");
+  const [guardandoStock, setGuardandoStock] = useState(false);
 
   useEffect(() => {
     async function cargar() {
@@ -90,6 +93,27 @@ function AdminProductos({ puedeEliminar = true }) {
     setMostrarFormulario(false);
   }
 
+  async function guardarStock(evento) {
+    evento.preventDefault();
+    setError("");
+    const cantidad = Number(stock);
+    if (stock === "" || !Number.isInteger(cantidad) || cantidad < 0) {
+      setError("Ingresa un stock entero mayor o igual a cero");
+      return;
+    }
+    setGuardandoStock(true);
+    try {
+      const guardado = await actualizarStock(productoEditando.id, cantidad);
+      setListaProductos(actual => actual.map(item => item.id === guardado.id ? guardado : item));
+      setMensaje("Stock actualizado correctamente");
+      cancelar();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setGuardandoStock(false);
+    }
+  }
+
   function agregar() {
     setProductoEditando(null);
     setHayCambios(false);
@@ -106,6 +130,7 @@ function AdminProductos({ puedeEliminar = true }) {
     }
 
     setProductoEditando(conCategoria(producto));
+    setStock(String(producto.stock));
     setMostrarFormulario(true);
   }
 
@@ -151,13 +176,24 @@ function AdminProductos({ puedeEliminar = true }) {
 
       {mensaje && <p className="text-success fw-bold">{mensaje}</p>}
 
-      {!mostrarFormulario && (
+      {esAdmin && !mostrarFormulario && (
         <Button className="mb-4" onClick={agregar}>
           Agregar producto
         </Button>
       )}
 
-      {mostrarFormulario && (
+      {!esAdmin && mostrarFormulario && productoEditando && (
+        <form className="bg-body-tertiary rounded p-4 mb-5" onSubmit={guardarStock}>
+          <h2 className="h4">Actualizar stock: {productoEditando.nombre}</h2>
+          <label htmlFor="stock-vendedor" className="form-label">Stock</label>
+          <input id="stock-vendedor" className="form-control mb-3" type="number"
+            min="0" step="1" required value={stock} onChange={e => setStock(e.target.value)} />
+          <Button type="submit" disabled={guardandoStock}>Guardar stock</Button>{" "}
+          <Button variant="secondary" onClick={cancelar} disabled={guardandoStock}>Cancelar</Button>
+        </form>
+      )}
+
+      {esAdmin && mostrarFormulario && (
         <section className="bg-body-tertiary rounded p-4 mb-5">
           <h2 className="h4 mb-4">
             {productoEditando ? "Editar producto" : "Agregar producto"}
@@ -206,6 +242,12 @@ function AdminProductos({ puedeEliminar = true }) {
                 <td className="d-none d-md-table-cell">{producto.codigo}</td>
                 <td>
                   <div>{producto.nombre}</div>
+                  <details className="small mt-1">
+                    <summary>Ver detalle</summary>
+                    <p className="mb-0">Código: {producto.codigo}</p>
+                    <p className="mb-0">{producto.descripcion || "Sin descripción"}</p>
+                    <p className="mb-0">Stock crítico: {producto.stockCritico}</p>
+                  </details>
                   <div className="text-secondary small d-lg-none">
                     {producto.marca} - {nombreCategoria(producto.categoriaId)}
                   </div>
@@ -220,9 +262,9 @@ function AdminProductos({ puedeEliminar = true }) {
                 <td>
                   <div className="d-grid gap-2 d-md-flex">
                     <Button className="btn-sm" onClick={() => editar(producto)}>
-                      Editar
+                      {esAdmin ? "Editar" : "Actualizar stock"}
                     </Button>
-                    {puedeEliminar && (
+                    {esAdmin && (
                       <Button
                         className="btn-sm"
                         onClick={() => eliminar(producto)}

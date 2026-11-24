@@ -20,6 +20,9 @@ export const crearProducto = datos => request("/productos", {
 export const actualizarProducto = (id, datos) => request(`/productos/${id}`, {
   method: "PUT", body: JSON.stringify(datos)
 });
+export const actualizarStock = (id, stock) => request(`/productos/${id}/stock`, {
+  method: "PUT", body: JSON.stringify({ stock })
+});
 export const eliminarProducto = id => request(`/productos/${id}`, {
   method: "DELETE"
 });
